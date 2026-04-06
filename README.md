@@ -1,25 +1,61 @@
-# Simple CRUD
-This repository contains a simple CRUD project built using Java Spring. The aim of this repository is to practice and share how you can build all CRUD Methods using Java Spring.
+# Projeto PFC Central do Corte
+Alunos:
+Bruna de Medeiros Santos | RGM: 11222101313
+Guilherme de Oliveira Matos | RGM: 11222101717
 
-This project is built over an existing one created in a live (https://www.youtube.com/watch?v=tP6wtEaCnSI).
+## Sobre o Projeto
 
-1. Start the application with Maven
-2. The API will be accessible at http://localhost:8080
+O **PFC Central do Corte** é um sistema web desenvolvido como Projeto de Finalização de Curso, com foco na criação de uma plataforma para gerenciamento de estabelecimentos de estética.
+A aplicação permite que usuários encontrem **barbearias e salões de beleza com base na localização**, visualizem serviços disponíveis e realizem agendamentos online.
+Além disso, oferece ferramentas para que os estabelecimentos possam gerenciar seus serviços, clientes e horários de forma eficiente.
 
-## API Endpoints
-The API provides the following endpoints:
+---
+## Funcionalidades
 
-```markdown
-GET /user - Retrieve a list of all data.
+- Cadastro e autenticação
+- Busca por barbearias/salões
+- Visualização de serviços
+- Agendamento de horários
+- Cadastro de estabelecimento
+- Gerenciamento de serviços
+- Controle de agenda
+- Gestão de clientes
 
-POST /user - Register a new data.
+---
 
-PUT /user - Alter data.
+## Tecnologias Utilizadas
 
-DELETE /user/{id} - Inactivate data.
-```
+### Back-end
+- Java
+- Spring Boot
+- Spring Security
+- JWT (JSON Web Token)
 
-## Database
-The project uses PostgresSQL as the database. The necessary database migrations are managed using Flyway.
+### Banco de Dados
+- PostgreSQL
 
-To install PostgresSQL locally you can [click here](https://www.postgresql.org/download/).
+### Ferramentas
+- Maven
+- Git & GitHub
+- Postman
+
+---
+
+## Arquitetura
+
+O projeto segue o padrão de arquitetura em camadas:
+
+src/
+├── controller
+├── service
+├── repository
+├── domain
+└── infra (security, config)
+
+---
+
+## Segurança
+
+- Autenticação via JWT
+- Autorização baseada em roles
+- Rotas protegidas com Spring Security
