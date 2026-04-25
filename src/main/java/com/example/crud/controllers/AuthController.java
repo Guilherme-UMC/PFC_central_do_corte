@@ -1,85 +1,72 @@
 package com.example.crud.controllers;
 
-import com.example.crud.domain.user.RequestUser;
-import com.example.crud.domain.user.User;
-import com.example.crud.domain.user.UserRepository;
 import com.example.crud.domain.user.UserRole;
-import com.example.crud.dto.LoginRequestDTO;
-import com.example.crud.dto.LoginResponseDTO;
-import com.example.crud.services.TokenService;
+import com.example.crud.dto.*;
+import com.example.crud.services.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
+@Tag(name = "Autenticação", description = "Endpoints para autenticação e registro de usuários")
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthService authService;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private TokenService tokenService;
-
+    @Operation(summary = "Login de usuário", description = "Autentica um usuário e retorna um token JWT")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso",
+                    content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Email ou senha inválidos"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
+    })
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody @Valid LoginRequestDTO data) {
-        try {
-            var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
-            Authentication auth = authenticationManager.authenticate(usernamePassword);
-
-            var user = (org.springframework.security.core.userdetails.User) auth.getPrincipal();
-            var userEntity = userRepository.findByEmail(user.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-            String token = tokenService.generateToken(userEntity);
-
-            return ResponseEntity.ok(new LoginResponseDTO(
-                    token,
-                    userEntity.getId(),
-                    userEntity.getName(),
-                    userEntity.getRole().name(),
-                    "Login realizado com sucesso"
-            ));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(new LoginResponseDTO(null, null, null, null, "Email ou senha inválidos"));
-        }
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
+    @Operation(summary = "Registro de cliente", description = "Cria uma nova conta de cliente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuário cadastrado com sucesso",
+                    content = @Content(schema = @Schema(implementation = RegisterResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Email já cadastrado ou dados inválidos")
+    })
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody @Valid RequestUser data) {
-        // Verifica se o email já existe
-        if (userRepository.existsByEmail(data.email())) {
-            return ResponseEntity.badRequest().body(new LoginResponseDTO(null, null, null, null, "Email já cadastrado"));
-        }
+    public ResponseEntity<RegisterResponseDTO> registerClient(@Valid @RequestBody RegisterRequestDTO request) {
+        return ResponseEntity.ok(authService.register(request, UserRole.ROLE_CLIENTE));
+    }
 
-        // Criptografa a senha antes de salvar
-        String encryptedPassword = passwordEncoder.encode(data.password());
+    @Operation(summary = "Registro de dono de barbearia",
+            description = "Cria um novo usuario proprietário de barbearia (ROLE_BARBEARIA_ADM)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuário cadastrado com sucesso",
+                    content = @Content(schema = @Schema(implementation = RegisterResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Email já cadastrado ou dados inválidos")
+    })
+    @PostMapping("/register/barbearia")
+    public ResponseEntity<RegisterResponseDTO> registerBarbeariaAdm(@Valid @RequestBody RegisterRequestDTO request) {
+        return ResponseEntity.ok(authService.register(request, UserRole.ROLE_BARBEARIA_ADM));
+    }
 
-        User newUser = new User();
-        newUser.setName(data.name());
-        newUser.setEmail(data.email());
-        newUser.setPassword(encryptedPassword);
-        newUser.setTelefone(data.telefone());
-        newUser.setRole(data.role() != null ? data.role() : UserRole.ROLE_CLIENTE);
-        newUser.setActive(true);
-
-        userRepository.save(newUser);
-
-        return ResponseEntity.ok(new LoginResponseDTO(null, newUser.getId(), newUser.getName(), newUser.getRole().name(), "Usuário cadastrado com sucesso"));
+    @Operation(summary = "Renovar token", description = "Gera um novo token JWT usando um token válido")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Token renovado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token inválido ou expirado")
+    })
+    @SecurityRequirement(name = "bearerAuth")
+    @PostMapping("/refresh-token")
+    public ResponseEntity<LoginResponseDTO> refreshToken(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7); // Remove "Bearer "
+        return ResponseEntity.ok(authService.refreshToken(token));
     }
 }
