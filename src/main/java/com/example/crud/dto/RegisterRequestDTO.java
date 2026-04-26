@@ -9,5 +9,5 @@ public record RegisterRequestDTO(
         @NotBlank @Size(min = 3, max = 100) String name,
         @NotBlank @Email String email,
         @NotBlank @Size(min = 6) String password,
-        @Pattern(regexp = "\\(\\d{2}\\)\\s?\\d{4,5}-?\\d{4}") String telefone
+        @Pattern(regexp = "\\d{2}\\s?\\d{4,5}?\\d{4}") String telefone
 ) {}
