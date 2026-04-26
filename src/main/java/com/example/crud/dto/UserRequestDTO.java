@@ -23,7 +23,7 @@ public class UserRequestDTO {
     @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
     private String password;
 
-    @Pattern(regexp = "\\(\\d{2}\\)\\s?\\d{4,5}-?\\d{4}", message = "Telefone inválido")
+    @Pattern(regexp = "\\d{2}\\s?\\d{4,5}?\\d{4}", message = "Telefone inválido")
     private String telefone;
 
     private UserRole role;
