@@ -37,6 +37,6 @@ public class BarbeariaRequestDTO {
     private String imgUrl;
 
     @NotBlank(message = "Telefone é obrigatório")
-    @Pattern(regexp = "\\(\\d{2}\\)\\s?\\d{4,5}-?\\d{4}", message = "Telefone inválido")
+    @Pattern(regexp = "\\d{2}\\s?\\d{4,5}?\\d{4}", message = "Telefone inválido")
     private String telefone;
 }
