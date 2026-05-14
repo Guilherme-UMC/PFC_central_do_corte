@@ -1,8 +1,8 @@
 package com.example.crud.services;
 
-import com.example.crud.domain.user.User;
-import com.example.crud.domain.user.UserRepository;
-import com.example.crud.domain.user.UserRole;
+import com.example.crud.domain.models.User;
+import com.example.crud.domain.repositories.UserRepository;
+import com.example.crud.domain.models.UserRole;
 import com.example.crud.dto.*;
 import com.example.crud.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;

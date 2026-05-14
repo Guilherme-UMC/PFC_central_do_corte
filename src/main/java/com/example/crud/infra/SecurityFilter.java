@@ -1,6 +1,6 @@
 package com.example.crud.infra;
 
-import com.example.crud.domain.user.UserRepository;
+import com.example.crud.domain.repositories.UserRepository;
 import com.example.crud.services.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

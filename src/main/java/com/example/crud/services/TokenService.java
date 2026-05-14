@@ -1,6 +1,6 @@
 package com.example.crud.services;
 
-import com.example.crud.domain.user.User;
+import com.example.crud.domain.models.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

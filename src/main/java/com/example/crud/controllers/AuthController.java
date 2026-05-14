@@ -1,6 +1,6 @@
 package com.example.crud.controllers;
 
-import com.example.crud.domain.user.UserRole;
+import com.example.crud.domain.models.UserRole;
 import com.example.crud.dto.*;
 import com.example.crud.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;

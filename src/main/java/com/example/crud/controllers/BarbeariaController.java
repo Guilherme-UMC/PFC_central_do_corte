@@ -1,6 +1,6 @@
 package com.example.crud.controllers;
 
-import com.example.crud.domain.user.User;
+import com.example.crud.domain.models.User;
 import com.example.crud.dto.BarbeariaRequestDTO;
 import com.example.crud.dto.BarbeariaResponseDTO;
 import com.example.crud.services.BarbeariaService;

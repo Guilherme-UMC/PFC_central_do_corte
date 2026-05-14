@@ -38,6 +38,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         //Swagger
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll()
+
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // Rotas públicas
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/barbearia/**").permitAll()

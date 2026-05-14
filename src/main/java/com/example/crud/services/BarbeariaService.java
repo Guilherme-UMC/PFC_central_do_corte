@@ -1,8 +1,8 @@
 package com.example.crud.services;
 
-import com.example.crud.domain.barbearia.Barbearia;
-import com.example.crud.domain.barbearia.BarbeariaRepository;
-import com.example.crud.domain.user.User;
+import com.example.crud.domain.models.Barbearia;
+import com.example.crud.domain.repositories.BarbeariaRepository;
+import com.example.crud.domain.models.User;
 import com.example.crud.dto.BarbeariaRequestDTO;
 import com.example.crud.dto.BarbeariaResponseDTO;
 import com.example.crud.exception.ResourceNotFoundException;

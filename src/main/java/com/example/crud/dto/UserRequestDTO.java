@@ -1,6 +1,6 @@
 package com.example.crud.dto;
 
-import com.example.crud.domain.user.UserRole;
+import com.example.crud.domain.models.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

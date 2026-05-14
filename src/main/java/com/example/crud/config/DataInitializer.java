@@ -1,8 +1,8 @@
 package com.example.crud.config;
 
-import com.example.crud.domain.user.User;
-import com.example.crud.domain.user.UserRepository;
-import com.example.crud.domain.user.UserRole;
+import com.example.crud.domain.models.User;
+import com.example.crud.domain.repositories.UserRepository;
+import com.example.crud.domain.models.UserRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
