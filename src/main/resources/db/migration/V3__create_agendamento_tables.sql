@@ -28,7 +28,7 @@ funcionario_id VARCHAR(36) NOT NULL,
 barbearia_id VARCHAR(36) NOT NULL,
 ativo BOOLEAN DEFAULT TRUE,
 criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-FOREIGN KEY (funcionario_id) REFERENCES users(id),
+FOREIGN KEY (funcionario_id) REFERENCES usuarios(id),
 FOREIGN KEY (barbearia_id) REFERENCES barbearias(id),
 UNIQUE (funcionario_id, barbearia_id)
 );
@@ -43,9 +43,9 @@ criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 cliente_id VARCHAR(36) NOT NULL,
 barbearia_id VARCHAR(36) NOT NULL,
 funcionario_id VARCHAR(36) NOT NULL,
-FOREIGN KEY (cliente_id) REFERENCES users(id),
+FOREIGN KEY (cliente_id) REFERENCES usuarios(id),
 FOREIGN KEY (barbearia_id) REFERENCES barbearias(id),
-FOREIGN KEY (funcionario_id) REFERENCES users(id)
+FOREIGN KEY (funcionario_id) REFERENCES usuarios(id)
 );
 
 -- Tabela de relacionamento agendamento-serviços

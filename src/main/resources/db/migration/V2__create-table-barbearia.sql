@@ -15,7 +15,7 @@ CREATE TABLE barbearias (
     atualizado_em TIMESTAMP,
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
 
-    CONSTRAINT fk_barbearia_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_barbearia_owner FOREIGN KEY (owner_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_barbearia_owner ON barbearias(owner_id);
