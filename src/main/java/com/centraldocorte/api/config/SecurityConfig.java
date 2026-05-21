@@ -41,13 +41,6 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Rotas públicas
-                        .requestMatchers(HttpMethod.GET, "/barbearia/buscar-por-cep/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/barbearia/buscar-cep/**").permitAll()
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/barbearia/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
-
                         //Rotas protegidas
                         //Users
                         .requestMatchers(HttpMethod.GET, "/users").hasAnyRole("ADMIN")
@@ -61,18 +54,28 @@ public class SecurityConfig {
 
                         //Admin
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/barbearia/owner/**").hasRole("ADMIN")
 
                         //Barbearia
+                        .requestMatchers(HttpMethod.GET, "/barbearia/minhas").hasAnyRole("ADMIN", "BARBEARIA_ADM")
                         .requestMatchers(HttpMethod.POST, "/barbearia/**").hasAnyRole("ADMIN", "BARBEARIA_ADM")
                         .requestMatchers(HttpMethod.PUT, "/barbearia/**").hasAnyRole("ADMIN", "BARBEARIA_ADM")
                         .requestMatchers(HttpMethod.DELETE, "/barbearia/**").hasAnyRole("ADMIN", "BARBEARIA_ADM")
                         .requestMatchers(HttpMethod.PATCH, "/barbearia/**").hasAnyRole("ADMIN", "BARBEARIA_ADM")
+
 
                         //Funcionario
                         .requestMatchers("/funcionario/**").hasAnyRole("FUNCIONARIO", "BARBEARIA_ADM", "ADMIN")
 
                         //Cliente
                         .requestMatchers("/cliente/**").hasAnyRole("CLIENTE", "ADMIN")
+
+                        // Rotas públicas
+                        .requestMatchers(HttpMethod.GET, "/barbearia/buscar-por-cep/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/barbearia/buscar-cep/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/barbearia/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
 
                         // Qualquer outra rota precisa de autenticação
                         .anyRequest().authenticated()

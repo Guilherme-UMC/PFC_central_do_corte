@@ -7,6 +7,7 @@ import com.centraldocorte.api.services.BarbeariaService;
 import com.centraldocorte.api.dto.ViaCepResponseDTO;
 import com.centraldocorte.api.services.ViaCepService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -49,7 +50,7 @@ public class BarbeariaController {
     @GetMapping
     @Operation(summary = "Listar todas as barbearias ativas")
     public ResponseEntity<Page<BarbeariaResponseDTO>> listarBarbeariasAtivas(
-            @PageableDefault(size = 10, sort = "nome", direction = Sort.Direction.ASC) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "nome", direction = Sort.Direction.ASC) @Parameter(hidden = true) Pageable pageable) {
         return ResponseEntity.ok(barbeariaService.listarBarbeariasAtivas(pageable));
     }
 

@@ -30,3 +30,5 @@ spring:
     swagger-ui.default-model-expand-depth: ${SWAGGER_UI_DEFAULT_MODEL}
     swagger-ui.show-extensions:            ${SWAGGER_SHOW_EXTENSIONS}
     swagger-ui.show-common-extensions:     ${SWAGGER_COMMUN_EXTENSIONS}
+    springdoc.override-with-generic-response: false
+    springdoc.model-converters.pageable-converter.enabled: false

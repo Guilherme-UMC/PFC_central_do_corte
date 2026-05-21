@@ -14,12 +14,27 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class FiltroDeAutenticacaoJwt extends OncePerRequestFilter {
 
     private static final String PREFIXO_BEARER = "Bearer ";
+
+    private static final List<String> PUBLIC_PATHS = Arrays.asList(
+            "/auth/",
+            "/barbearia/buscar-por-cep/",
+            "/barbearia/buscar-cep/",
+            "/swagger-ui",
+            "/v3/api-docs",
+            "/api-docs"
+    );
+
+    private static final List<String> PUBLIC_GET_PATHS = Arrays.asList(
+            "/barbearia"
+    );
 
     private final TokenService tokenService;
     private final UsuarioRepository usuarioRepository;
@@ -31,12 +46,9 @@ public class FiltroDeAutenticacaoJwt extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String uri = request.getRequestURI();
+        String method = request.getMethod();
 
-        if (
-                uri.startsWith("/auth/") ||
-                        uri.startsWith("/barbearia/buscar-por-cep/") ||
-                        uri.startsWith("/barbearia/buscar-cep/")
-        ) {
+        if (isPublicPath(uri, method)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -52,6 +64,24 @@ public class FiltroDeAutenticacaoJwt extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isPublicPath(String uri, String method) {
+        for (String path : PUBLIC_PATHS) {
+            if (uri.startsWith(path)) {
+                return true;
+            }
+        }
+
+        if (method.equals("GET")) {
+            for (String path : PUBLIC_GET_PATHS) {
+                if (uri.equals(path) || uri.matches(path + "(\\?.*)?")) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private void autenticarUsuarioComToken(String token) {
