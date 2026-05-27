@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/funcionarios")
 @RequiredArgsConstructor
-@SecurityRequirement(name= "bearerAuth")
+@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Funcionários", description = "Endpoints para gerenciamento de funcionários")
 public class FuncionarioController {
 
@@ -31,7 +31,7 @@ public class FuncionarioController {
     private final UsuarioService usuarioService;
 
     @PostMapping("/barbearia/{barbeariaId}")
-    @PreAuthorize("hasAnyRole('ADMIN','BARBEARIA_ADM')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
     @Operation(summary = "Criar novo funcionário e vincular à barbearia")
     public ResponseEntity<UsuarioResponseDTO> criarFuncionario(
             @PathVariable String barbeariaId,
@@ -45,7 +45,7 @@ public class FuncionarioController {
     }
 
     @PostMapping("/barbearia/{barbeariaId}/vincular")
-    @PreAuthorize("hasAnyRole('ADMIN','BARBEARIA_ADM')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
     @Operation(summary = "Vincular funcionário existente à barbearia")
     public ResponseEntity<Void> vincularFuncionarioExistente(
             @PathVariable String barbeariaId,
@@ -56,7 +56,7 @@ public class FuncionarioController {
     }
 
     @GetMapping("/barbearia/{barbeariaId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM', 'FUNCIONARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM', 'FUNCIONARIO', 'CLIENTE')")
     @Operation(summary = "Listar todos os funcionários de uma barbearia")
     public ResponseEntity<List<UsuarioResponseDTO>> listarFuncionariosPorBarbearia(
             @PathVariable String barbeariaId) {
@@ -77,14 +77,14 @@ public class FuncionarioController {
     }
 
     @GetMapping("/todos")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Listar todos os funcionários do sistema (apenas ADMIN)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
+    @Operation(summary = "Listar todos os funcionários do sistema")
     public ResponseEntity<List<UsuarioResponseDTO>> listarTodosFuncionarios() {
         return ResponseEntity.ok(usuarioService.listarTodosFuncionarios());
     }
 
     @GetMapping("/{funcionarioId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM', 'FUNCIONARIO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM', 'FUNCIONARIO', 'CLIENTE')")
     @Operation(summary = "Buscar funcionário por ID")
     public ResponseEntity<UsuarioResponseDTO> buscarFuncionarioPorId(@PathVariable String funcionarioId) {
         return ResponseEntity.ok(usuarioService.buscarPorId(funcionarioId));
@@ -128,7 +128,7 @@ public class FuncionarioController {
     }
 
     @GetMapping("/barbearia/{barbeariaId}/disponibilidade")
-    @PreAuthorize("hasAnyRole('BARBEARIA_ADM', 'CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM', 'CLIENTE')")
     @Operation(summary = "Verificar se funcionário está disponível em um horário")
     public ResponseEntity<Boolean> verificarDisponibilidadeDoFuncionario(
             @PathVariable String barbeariaId,

@@ -77,7 +77,6 @@ public class FuncionarioService {
         return usuarioService.listarFuncionariosDisponiveis();
     }
 
-    // CORRIGIDO: Verificar se o método existe no Repository
     public boolean verificarDisponibilidadeDoFuncionario(String barbeariaId, String funcionarioId, LocalDateTime dataHora) {
         boolean pertenceABarbearia = funcionarioBarbeariaRepository
                 .existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId);
@@ -88,7 +87,6 @@ public class FuncionarioService {
 
         LocalDateTime horaFim = dataHora.plusHours(1);
 
-        // CORREÇÃO: Este método precisa existir no AgendamentoRepository
         List<Agendamento> agendamentosConflitantes = agendamentoRepository
                 .findByFuncionarioIdAndDataHoraBetween(funcionarioId, dataHora, horaFim);
 
