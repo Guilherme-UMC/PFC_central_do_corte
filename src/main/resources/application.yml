@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url:      ${URL_DATASOURCE}
+    username: ${USERNAME_DATASOURCE}
+    password: ${PASSWORD_DATASOURCE}
+
+
+    # JWT Secret - Mínimo 32 caracteres
+  api:
+    security:
+      token:
+        secret: ${TOKEN_KEY}
+
+
+    # Spring Security
+  security:
+    user.name:     ${SECURITY_USER_NAME}
+    user.password: ${SECURITY_USER_PASSWORD}
+    user.roles:    ${SECURITY_USER_ROLE}
+
+
+    #Swagger
+  springdoc:
+    api-docs.path:                         ${SWAGGER_PATH}
+    swagger-ui.path:                       ${SWAGGER_UI_PATH}
+    swagger-ui.operations-sorter:          ${SWAGGER_UI_OPERATIONS}
+    swagger-ui.tags-sorter:                ${SWAGGER_UI_TAGS}
+    swagger-ui.doc-expansion:              ${SWAGGER_UI_EXPANSION}
+    swagger-ui.display-request-duration:   ${SWAGGER_UI_REQUEST_DURATION}
+    swagger-ui.default-model-expand-depth: ${SWAGGER_UI_DEFAULT_MODEL}
+    swagger-ui.show-extensions:            ${SWAGGER_SHOW_EXTENSIONS}
+    swagger-ui.show-common-extensions:     ${SWAGGER_COMMUN_EXTENSIONS}
+    springdoc.override-with-generic-response: false
+    springdoc.model-converters.pageable-converter.enabled: false
