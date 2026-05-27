@@ -1,64 +1,73 @@
 package com.centraldocorte.api.controllers;
 
-
-import com.centraldocorte.api.domain.models.Agendamento;
 import com.centraldocorte.api.dto.AgendamentoRequestDTO;
 import com.centraldocorte.api.dto.AgendamentoResponseDTO;
 import com.centraldocorte.api.services.AgendamentoService;
-import com.centraldocorte.api.services.UsuarioService;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/agendamentos")
 @RequiredArgsConstructor
-@SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Agendamentos", description = "Endpoints para agendamentos")
 public class AgendamentoController {
+
     private final AgendamentoService agendamentoService;
-    private final UsuarioService usuarioService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','CLIENTE')")
-    public ResponseEntity<Agendamento> criarAgendamento(
-            @AuthenticationPrincipal UserDetails usuarioAutenticado,
-            @Valid @RequestBody AgendamentoRequestDTO dto) {
-
-        String clienteId = usuarioService.buscarPorEmail(usuarioAutenticado.getUsername()).getId();
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(agendamentoService.criarAgendamento(clienteId, dto));
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<AgendamentoResponseDTO> criarAgendamento(@Valid @RequestBody AgendamentoRequestDTO request) {
+        AgendamentoResponseDTO agendamento = agendamentoService.criarAgendamento(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(agendamento);
     }
 
-    @GetMapping("/meus")
-    @PreAuthorize("hasAnyRole('ADMIN','CLIENTE')")
-    public ResponseEntity<List<AgendamentoResponseDTO>> listarMeusAgendamentos(
-            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-
-        String clienteId = usuarioService.buscarPorEmail(usuarioAutenticado.getUsername()).getId();
-        return ResponseEntity.ok(agendamentoService.listarAgendamentosCliente(clienteId));
+    @PutMapping("/{id}/cancelar")
+    @PreAuthorize("hasAnyRole('CLIENTE', 'BARBEARIA_ADM')")
+    public ResponseEntity<AgendamentoResponseDTO> cancelarAgendamento(
+            @PathVariable Long id,
+            @RequestParam String motivo) {
+        AgendamentoResponseDTO agendamento = agendamentoService.cancelarAgendamento(id, motivo);
+        return ResponseEntity.ok(agendamento);
     }
 
+    @PutMapping("/{id}/confirmar")
+    @PreAuthorize("hasRole('BARBEARIA_ADM')")
+    public ResponseEntity<AgendamentoResponseDTO> confirmarAgendamento(@PathVariable Long id) {
+        AgendamentoResponseDTO agendamento = agendamentoService.confirmarAgendamento(id);
+        return ResponseEntity.ok(agendamento);
+    }
+
+    @PutMapping("/{id}/concluir")
+    @PreAuthorize("hasRole('BARBEARIA_ADM')")
+    public ResponseEntity<AgendamentoResponseDTO> concluirAgendamento(@PathVariable Long id) {
+        AgendamentoResponseDTO agendamento = agendamentoService.concluirAgendamento(id);
+        return ResponseEntity.ok(agendamento);
+    }
+
+    @GetMapping("/cliente/meus")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<List<AgendamentoResponseDTO>> getMeusAgendamentos() {
+        List<AgendamentoResponseDTO> agendamentos = agendamentoService.getAgendamentosDoCliente();
+        return ResponseEntity.ok(agendamentos);
+    }
+
+    // CORRIGIDO: Long → String
     @GetMapping("/barbearia/{barbeariaId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM', 'FUNCIONARIO')")
-    public ResponseEntity<List<AgendamentoResponseDTO>> listarAgendamentosBarbearia(
-            @PathVariable String barbeariaId) {
-        return ResponseEntity.ok(agendamentoService.listarAgendamentosBarbearia(barbeariaId));
+    @PreAuthorize("hasRole('BARBEARIA_ADM')")
+    public ResponseEntity<List<AgendamentoResponseDTO>> getAgendamentosBarbearia(@PathVariable String barbeariaId) {
+        List<AgendamentoResponseDTO> agendamentos = agendamentoService.getAgendamentosDaBarbearia(barbeariaId);
+        return ResponseEntity.ok(agendamentos);
     }
 
-    @PatchMapping("/{agendamentoId}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM', 'FUNCIONARIO')")
-    public ResponseEntity<Agendamento> atualizarStatusAgendamento(
-            @PathVariable String agendamentoId,
-            @RequestParam String status) {
-        return ResponseEntity.ok(agendamentoService.atualizarStatusAgendamento(agendamentoId, status));
+    // CORRIGIDO: Long → String
+    @GetMapping("/barbearia/{barbeariaId}/hoje")
+    @PreAuthorize("hasRole('BARBEARIA_ADM')")
+    public ResponseEntity<List<AgendamentoResponseDTO>> getAgendamentosHoje(@PathVariable String barbeariaId) {
+        List<AgendamentoResponseDTO> agendamentos = agendamentoService.getAgendamentosDoDia(barbeariaId);
+        return ResponseEntity.ok(agendamentos);
     }
 }

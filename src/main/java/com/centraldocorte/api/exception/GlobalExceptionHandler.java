@@ -62,6 +62,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(erro);
     }
 
+    // ✅ ADICIONAR ESTE MÉTODO
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<RespostaDeErro> tratarNaoAutorizado(UnauthorizedException ex) {
+        RespostaDeErro erro = new RespostaDeErro(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Não autorizado",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(erro);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<RespostaDeErroDeValidacao> tratarErroDeValidacao(MethodArgumentNotValidException ex) {
         Map<String, String> errosPorCampo = new HashMap<>();

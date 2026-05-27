@@ -1,6 +1,6 @@
 package com.centraldocorte.api.dto;
 
-import com.centraldocorte.api.domain.models.UsuarioRole;
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

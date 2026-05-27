@@ -1,7 +1,7 @@
 package com.centraldocorte.api.services;
 
 import com.centraldocorte.api.domain.models.Usuario;
-import com.centraldocorte.api.domain.models.UsuarioRole;
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.domain.repositories.UsuarioRepository;
 import com.centraldocorte.api.domain.repositories.FuncionarioBarbeariaRepository;
 import com.centraldocorte.api.dto.UsuarioResponseDTO;

@@ -1,7 +1,7 @@
 package com.centraldocorte.api.controllers;
 
 import com.centraldocorte.api.domain.models.Usuario;
-import com.centraldocorte.api.domain.models.UsuarioRole;
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.dto.FuncionarioVinculoDTO;
 import com.centraldocorte.api.dto.UsuarioRequestDTO;
 import com.centraldocorte.api.dto.UsuarioResponseDTO;

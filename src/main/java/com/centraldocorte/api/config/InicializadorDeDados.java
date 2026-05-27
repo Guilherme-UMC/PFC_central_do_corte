@@ -2,7 +2,7 @@ package com.centraldocorte.api.config;
 
 import com.centraldocorte.api.domain.models.Usuario;
 import com.centraldocorte.api.domain.repositories.UsuarioRepository;
-import com.centraldocorte.api.domain.models.UsuarioRole;
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

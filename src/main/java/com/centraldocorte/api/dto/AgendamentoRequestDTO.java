@@ -1,26 +1,26 @@
 package com.centraldocorte.api.dto;
 
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class AgendamentoRequestDTO {
-    @NotNull(message = "Data e hora são obrigatórias")
-    @Future(message = "Data e hora devem ser futuras")
-    private LocalDateTime dataHora;
-
-    private String observacoes;
 
     @NotNull(message = "ID da barbearia é obrigatório")
     private String barbeariaId;
 
-    @NotNull(message = "ID do funcionário é obrigatório")
-    private String funcionarioId;
+    @NotNull(message = "ID do serviço é obrigatório")
+    private String servicoId;
 
-    @NotEmpty(message = "Pelo menos um serviço deve ser selecionado")
-    private List<String> servicosIds;
+    @NotNull(message = "Data e hora são obrigatórias")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime dataHora;
+
+    private String observacao;
 }

@@ -1,11 +1,10 @@
 package com.centraldocorte.api.controllers;
 
-import com.centraldocorte.api.domain.models.UsuarioRole;
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.dto.LoginRequestDTO;
 import com.centraldocorte.api.dto.LoginResponseDTO;
 import com.centraldocorte.api.dto.RegisterRequestDTO;
 import com.centraldocorte.api.dto.RegisterResponseDTO;
-import com.centraldocorte.api.dto.*;
 import com.centraldocorte.api.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

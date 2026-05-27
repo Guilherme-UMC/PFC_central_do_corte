@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -29,18 +28,14 @@ public class ServicoController {
             @PathVariable String barbeariaId,
             @Valid @RequestBody ServicoDTO dto) {
 
-        Servico servico = servicoService.criarServico(barbeariaId, dto);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(servicoService.converterParaResponseDTO(servico));
+        ServicoResponseDTO servico = servicoService.criarServico(barbeariaId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(servico);
     }
 
     @GetMapping("/barbearia/{barbeariaId}")
     @PreAuthorize("hasAnyRole('ADMIN','BARBEARIA_ADM', 'FUNCIONARIO', 'CLIENTE')")
     public ResponseEntity<List<ServicoResponseDTO>> listarServicosBarbearia(@PathVariable String barbeariaId) {
-        List<ServicoResponseDTO> servicos = servicoService.listarServicosAtivosBarbearia(barbeariaId)
-                .stream()
-                .map(servicoService::converterParaResponseDTO)
-                .toList();
+        List<ServicoResponseDTO> servicos = servicoService.listarServicosAtivosBarbearia(barbeariaId);
         return ResponseEntity.ok(servicos);
     }
 
@@ -50,8 +45,8 @@ public class ServicoController {
             @PathVariable String servicoId,
             @Valid @RequestBody ServicoDTO dto) {
 
-        Servico servico = servicoService.atualizarServico(servicoId, dto);
-        return ResponseEntity.ok(servicoService.converterParaResponseDTO(servico));
+        ServicoResponseDTO servico = servicoService.atualizarServico(servicoId, dto);
+        return ResponseEntity.ok(servico);
     }
 
     @DeleteMapping("/{servicoId}")

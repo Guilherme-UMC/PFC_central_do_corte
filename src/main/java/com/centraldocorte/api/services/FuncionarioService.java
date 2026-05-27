@@ -1,12 +1,11 @@
 package com.centraldocorte.api.services;
 
 import com.centraldocorte.api.domain.models.*;
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.domain.repositories.AgendamentoRepository;
 import com.centraldocorte.api.domain.repositories.BarbeariaRepository;
 import com.centraldocorte.api.domain.repositories.FuncionarioBarbeariaRepository;
 import com.centraldocorte.api.domain.repositories.UsuarioRepository;
-import com.centraldocorte.api.domain.models.*;
-import com.centraldocorte.api.domain.repositories.*;
 import com.centraldocorte.api.dto.FuncionarioVinculoDTO;
 import com.centraldocorte.api.dto.UsuarioResponseDTO;
 import com.centraldocorte.api.exception.BusinessException;
@@ -78,6 +77,7 @@ public class FuncionarioService {
         return usuarioService.listarFuncionariosDisponiveis();
     }
 
+    // CORRIGIDO: Verificar se o método existe no Repository
     public boolean verificarDisponibilidadeDoFuncionario(String barbeariaId, String funcionarioId, LocalDateTime dataHora) {
         boolean pertenceABarbearia = funcionarioBarbeariaRepository
                 .existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId);
@@ -87,6 +87,8 @@ public class FuncionarioService {
         }
 
         LocalDateTime horaFim = dataHora.plusHours(1);
+
+        // CORREÇÃO: Este método precisa existir no AgendamentoRepository
         List<Agendamento> agendamentosConflitantes = agendamentoRepository
                 .findByFuncionarioIdAndDataHoraBetween(funcionarioId, dataHora, horaFim);
 
@@ -135,6 +137,7 @@ public class FuncionarioService {
         FuncionarioBarbearia vinculo = new FuncionarioBarbearia();
         vinculo.setFuncionario(funcionario);
         vinculo.setBarbearia(barbearia);
+        vinculo.setAtivo(true); // Adicionado para consistência
         funcionarioBarbeariaRepository.save(vinculo);
     }
 }

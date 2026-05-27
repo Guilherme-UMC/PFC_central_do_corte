@@ -1,7 +1,7 @@
 package com.centraldocorte.api.domain.repositories;
 
 import com.centraldocorte.api.domain.models.Usuario;
-import com.centraldocorte.api.domain.models.UsuarioRole;
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;

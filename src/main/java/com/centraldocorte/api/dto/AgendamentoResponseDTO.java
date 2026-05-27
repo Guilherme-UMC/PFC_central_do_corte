@@ -1,22 +1,28 @@
 package com.centraldocorte.api.dto;
 
 import lombok.Data;
-
-import java.math.BigDecimal;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class AgendamentoResponseDTO {
-    private String id;
-    private LocalDateTime dataHora;
-    private String observacoes;
-    private String status;
-    private LocalDateTime criadoEm;
-    private String clienteNome;
+    private Long id;
     private String barbeariaNome;
-    private String funcionarioNome;
-    private List<ServicoDTO> servicos;
-    private BigDecimal valorTotal;
-    private Integer duracaoTotalMinutos;
+    private String clienteNome;
+    private String servicoNome;
+    private Double servicoPreco;
+    private Integer servicoDuracao;
+
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+    private LocalDateTime dataHora;
+
+    private String status;
+    private String observacao;
+
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+    private LocalDateTime criadoEm;
 }

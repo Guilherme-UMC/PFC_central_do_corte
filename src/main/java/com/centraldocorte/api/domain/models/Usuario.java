@@ -1,5 +1,6 @@
 package com.centraldocorte.api.domain.models;
 
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;

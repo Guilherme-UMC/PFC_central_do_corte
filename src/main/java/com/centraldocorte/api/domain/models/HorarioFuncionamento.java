@@ -1,31 +1,55 @@
 package com.centraldocorte.api.domain.models;
 
+import com.centraldocorte.api.domain.models.enums.DiaSemana;
 import jakarta.persistence.*;
 import lombok.Data;
-import java.time.DayOfWeek;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 
-@Data
 @Entity
-@Table(name = "horarios_funcionamento")
+@Table(name = "horario_funcionamento")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class HorarioFuncionamento {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(nullable = false)
-    private DayOfWeek diaSemana;
-
-    @Column(nullable = false)
-    private LocalTime horaInicio;
-
-    @Column(nullable = false)
-    private LocalTime horaFim;
-
-    @Column(nullable = false)
-    private Boolean ativo = true;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "barbearia_id", nullable = false)
     private Barbearia barbearia;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DiaSemana dia;
+
+    @Column(name = "hora_abertura")
+    private LocalTime horaAbertura;
+
+    @Column(name = "hora_fechamento")
+    private LocalTime horaFechamento;
+
+    @Column(nullable = false)
+    private Boolean fechado = false;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

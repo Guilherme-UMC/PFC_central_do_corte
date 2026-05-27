@@ -1,6 +1,8 @@
 package com.centraldocorte.api.services;
 
 import com.centraldocorte.api.domain.models.*;
+import com.centraldocorte.api.domain.models.enums.StatusAgendamento;
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.domain.repositories.*;
 import com.centraldocorte.api.dto.AgendamentoRequestDTO;
 import com.centraldocorte.api.dto.AgendamentoResponseDTO;
@@ -44,7 +46,7 @@ class AgendamentoServiceTest {
     private FuncionarioBarbeariaRepository funcionarioBarbeariaRepository;
 
     @Mock
-    private HorarioFuncionamentoService horarioFuncionamentoService;
+    private HorarioService horarioFuncionamentoService;
 
     @InjectMocks
     private AgendamentoService agendamentoService;

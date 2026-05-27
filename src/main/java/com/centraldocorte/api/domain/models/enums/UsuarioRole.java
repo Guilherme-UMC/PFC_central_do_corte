@@ -1,4 +1,4 @@
-package com.centraldocorte.api.domain.models;
+package com.centraldocorte.api.domain.models.enums;
 
 public enum UsuarioRole {
     ROLE_ADMIN("admin"),

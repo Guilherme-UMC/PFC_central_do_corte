@@ -65,4 +65,6 @@ public class Barbearia {
     @Column(nullable = false)
     private Boolean ativo = true;
 
+
+
 }

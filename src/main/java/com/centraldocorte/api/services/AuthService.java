@@ -2,12 +2,11 @@ package com.centraldocorte.api.services;
 
 import com.centraldocorte.api.domain.models.Usuario;
 import com.centraldocorte.api.domain.repositories.UsuarioRepository;
-import com.centraldocorte.api.domain.models.UsuarioRole;
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.dto.LoginRequestDTO;
 import com.centraldocorte.api.dto.LoginResponseDTO;
 import com.centraldocorte.api.dto.RegisterRequestDTO;
 import com.centraldocorte.api.dto.RegisterResponseDTO;
-import com.centraldocorte.api.dto.*;
 import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
