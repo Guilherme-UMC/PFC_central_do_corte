@@ -30,3 +30,8 @@ api:
   security:
     token:
       secret: ${TOKEN_KEY}
+
+admin:
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}
+  telefone: ${ADMIN_TELEFONE:11999999999}
