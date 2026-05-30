@@ -7,19 +7,26 @@ import com.centraldocorte.api.domain.repositories.BarbeariaRepository;
 import com.centraldocorte.api.domain.repositories.FuncionarioBarbeariaRepository;
 import com.centraldocorte.api.domain.repositories.UsuarioRepository;
 import com.centraldocorte.api.dto.FuncionarioVinculoDTO;
+import com.centraldocorte.api.dto.RegisterRequestDTO;
+import com.centraldocorte.api.dto.RegisterResponseDTO;
 import com.centraldocorte.api.dto.UsuarioResponseDTO;
 import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class FuncionarioService {
+
+    private final AuthService authService;
     private final UsuarioService usuarioService;
     private final UsuarioRepository usuarioRepository;
     private final FuncionarioBarbeariaRepository funcionarioBarbeariaRepository;
@@ -27,54 +34,235 @@ public class FuncionarioService {
     private final AgendamentoRepository agendamentoRepository;
 
     @Transactional
-    public Usuario criarFuncionario(String barbeariaId, Usuario funcionario) {
+    public UsuarioResponseDTO criarFuncionario(String barbeariaId, RegisterRequestDTO request) {
+        log.info("Criando novo funcionário para barbearia: {}", barbeariaId);
+
         Barbearia barbearia = buscarBarbeariaPorId(barbeariaId);
-        validarEmailDisponivel(funcionario.getEmail());
+        authService.registrarUsuario(request, UsuarioRole.ROLE_FUNCIONARIO);
+        Usuario funcionario = usuarioService.buscarPorEmail(request.email());
 
-        Usuario funcionarioSalvo = usuarioRepository.save(funcionario);
-        vincularFuncionarioABarbearia(funcionarioSalvo, barbearia);
+        criarVinculo(funcionario, barbearia);
 
-        return funcionarioSalvo;
+        return usuarioService.converterParaResponseDTO(funcionario);
     }
 
     @Transactional
     public void vincularFuncionarioExistente(String barbeariaId, FuncionarioVinculoDTO dto) {
-        Usuario funcionario = usuarioService.buscarPorEmail(dto.getFuncionarioEmail());
-        validarRoleFuncionario(funcionario);
+        log.info("Vinculando funcionário existente à barbearia: {} - Email: {}", barbeariaId, dto.getFuncionarioEmail());
 
+        Usuario funcionario = usuarioService.buscarUsuarioPorEmailIncluindoInativos(dto.getFuncionarioEmail());
         Barbearia barbearia = buscarBarbeariaPorId(barbeariaId);
-        validarFuncionarioNaoVinculadoABarbearia(funcionario.getId(), barbearia.getId());
 
-        criarVinculo(funcionario, barbearia);
+        validarFuncionarioParaVinculo(funcionario);
+        validarVinculoAtivo(funcionario.getId(), barbeariaId);
+
+        var vinculoInativo = funcionarioBarbeariaRepository
+                .findByFuncionarioIdAndBarbeariaId(funcionario.getId(), barbeariaId);
+
+        if (vinculoInativo.isPresent() && !vinculoInativo.get().getAtivo()) {
+            reativarVinculo(vinculoInativo.get());
+
+            if (!funcionario.isActive()) {
+                usuarioService.setActiveStatus(funcionario.getId(), true);
+                log.info("Usuário reativado durante vinculação");
+            }
+            log.info("Vínculo anterior reativado para funcionário: {}", funcionario.getId());
+        } else {
+            criarVinculo(funcionario, barbearia);
+            log.info("Novo vínculo criado para funcionário: {}", funcionario.getId());
+        }
     }
 
     @Transactional(readOnly = true)
-    public List<Usuario> listarFuncionariosBarbearia(String barbeariaId) {
-        buscarBarbeariaPorId(barbeariaId);
+    public List<UsuarioResponseDTO> listarFuncionariosPorBarbearia(String barbeariaId) {
+        log.debug("Listando funcionários da barbearia: {}", barbeariaId);
+
+        validarBarbeariaExistente(barbeariaId);
 
         return funcionarioBarbeariaRepository.findByBarbeariaIdAndAtivoTrue(barbeariaId)
                 .stream()
                 .map(FuncionarioBarbearia::getFuncionario)
                 .filter(Usuario::isActive)
+                .map(usuarioService::converterParaResponseDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioResponseDTO> listarFuncionariosDisponiveisParaAgendamento(String barbeariaId) {
+        log.debug("Listando funcionários disponíveis para agendamento na barbearia: {}", barbeariaId);
+
+        validarBarbeariaExistente(barbeariaId);
+
+        return funcionarioBarbeariaRepository.findFuncionariosDisponiveisPorBarbearia(barbeariaId)
+                .stream()
+                .map(FuncionarioBarbearia::getFuncionario)
+                .filter(Usuario::isActive)
+                .map(usuarioService::converterParaResponseDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioResponseDTO> listarFuncionariosDisponiveisParaContratacao() {
+        log.debug("Listando funcionários disponíveis para contratação");
+
+        return usuarioRepository.findByRoleAndActiveTrue(UsuarioRole.ROLE_FUNCIONARIO)
+                .stream()
+                .filter(funcionario -> !possuiVinculoAtivo(funcionario.getId()))
+                .map(usuarioService::converterParaResponseDTO)
                 .toList();
     }
 
     @Transactional
     public void desvincularFuncionario(String barbeariaId, String funcionarioId) {
-        buscarBarbeariaPorId(barbeariaId);
-        buscarFuncionarioPorId(funcionarioId);
+        log.info("Desvinculando funcionário {} da barbearia {}", funcionarioId, barbeariaId);
+
+        validarFuncionarioExiste(funcionarioId);
+        validarBarbeariaExistente(barbeariaId);
 
         FuncionarioBarbearia vinculo = funcionarioBarbeariaRepository
-                .findByFuncionarioIdAndBarbeariaId(funcionarioId, barbeariaId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vínculo não encontrado"));
+                .findByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vínculo ativo não encontrado"));
 
         vinculo.setAtivo(false);
         funcionarioBarbeariaRepository.save(vinculo);
+
+        log.info("Funcionário desvinculado com sucesso");
     }
 
-    @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> listarFuncionariosDisponiveis() {
-        return usuarioService.listarFuncionariosDisponiveis();
+    @Transactional
+    public void desativarFuncionario(String barbeariaId, String funcionarioId) {
+        log.info("Desativando funcionário {} da barbearia {}", funcionarioId, barbeariaId);
+
+        validarFuncionarioExiste(funcionarioId);
+        validarBarbeariaExistente(barbeariaId);
+
+        FuncionarioBarbearia vinculo = funcionarioBarbeariaRepository
+                .findByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vínculo ativo não encontrado"));
+
+        vinculo.setAtivo(false);
+        funcionarioBarbeariaRepository.save(vinculo);
+
+        usuarioService.setActiveStatus(funcionarioId, false);
+        log.info("Funcionário desativado com sucesso");
+    }
+
+    @Transactional
+    public void reativarFuncionario(String barbeariaId, String funcionarioId) {
+        log.info("Reativando funcionário {} na barbearia {}", funcionarioId, barbeariaId);
+
+        Usuario funcionario = usuarioService.buscarUsuarioPorIdIncluindoInativos(funcionarioId);
+
+        if (!funcionario.isActive()) {
+            usuarioService.setActiveStatus(funcionarioId, true);
+            log.info("Conta do usuário reativada");
+        }
+
+        var vinculoOpt = funcionarioBarbeariaRepository
+                .findByFuncionarioIdAndBarbeariaId(funcionarioId, barbeariaId);
+
+        if (vinculoOpt.isPresent()) {
+            FuncionarioBarbearia vinculo = vinculoOpt.get();
+            if (!vinculo.getAtivo()) {
+                reativarVinculo(vinculo);
+                log.info("Vínculo reativado");
+            }
+        } else {
+            Barbearia barbearia = buscarBarbeariaPorId(barbeariaId);
+            criarVinculo(funcionario, barbearia);
+            log.info("Novo vínculo criado durante reativação");
+        }
+    }
+
+    @Transactional
+    public void alternarDisponibilidadeFuncionario(String barbeariaId, String funcionarioId) {
+        log.info("Alternando disponibilidade do funcionário {} na barbearia {}", funcionarioId, barbeariaId);
+
+        Usuario funcionario = usuarioService.buscarUsuarioPorIdIncluindoInativos(funcionarioId);
+
+        if (!funcionario.isActive()) {
+            throw new BusinessException(
+                    String.format("Não é possível alterar disponibilidade de funcionário inativo: %s", funcionarioId));
+        }
+
+        FuncionarioBarbearia vinculo = funcionarioBarbeariaRepository
+                .findByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vínculo ativo não encontrado"));
+
+        vinculo.setDisponivel(!vinculo.getDisponivel());
+        funcionarioBarbeariaRepository.save(vinculo);
+
+        String status = vinculo.getDisponivel() ? "disponível" : "indisponível";
+        log.info("Funcionário agora está {} para agendamentos", status);
+    }
+
+    private Barbearia buscarBarbeariaPorId(String id) {
+        return barbeariaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Barbearia não encontrada: " + id));
+    }
+
+    private void validarBarbeariaExistente(String id) {
+        if (!barbeariaRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Barbearia não encontrada: " + id);
+        }
+    }
+
+    private void validarFuncionarioExiste(String id) {
+        if (!usuarioRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Funcionário não encontrado: " + id);
+        }
+    }
+
+    private void validarFuncionarioParaVinculo(Usuario funcionario) {
+        if (funcionario.getRole() != UsuarioRole.ROLE_FUNCIONARIO) {
+            throw new BusinessException(
+                    String.format("Usuário %s não possui papel de funcionário", funcionario.getEmail()));
+        }
+    }
+
+    private void validarVinculoAtivo(String funcionarioId, String barbeariaId) {
+        boolean jaVinculado = funcionarioBarbeariaRepository
+                .existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId);
+
+        if (jaVinculado) {
+            throw new BusinessException("Funcionário já está vinculado ativamente a esta barbearia");
+        }
+    }
+
+    private FuncionarioBarbearia criarVinculo(Usuario funcionario, Barbearia barbearia) {
+        FuncionarioBarbearia vinculo = FuncionarioBarbearia.builder()
+                .funcionario(funcionario)
+                .barbearia(barbearia)
+                .ativo(true)
+                .disponivel(true)
+                .build();
+
+        return funcionarioBarbeariaRepository.save(vinculo);
+    }
+
+    private void reativarVinculo(FuncionarioBarbearia vinculo) {
+        vinculo.setAtivo(true);
+        vinculo.setDisponivel(true);
+        funcionarioBarbeariaRepository.save(vinculo);
+    }
+
+    private boolean isFuncionarioAtivoEDisponivel(String funcionarioId, String barbeariaId) {
+        if (!usuarioService.existsById(funcionarioId)) {
+            return false;
+        }
+
+        Usuario funcionario = usuarioService.buscarUsuarioPorIdIncluindoInativos(funcionarioId);
+        if (!funcionario.isActive()) {
+            return false;
+        }
+
+        return funcionarioBarbeariaRepository
+                .existsByFuncionarioIdAndBarbeariaIdAndAtivoTrueAndDisponivelTrue(
+                        funcionarioId, barbeariaId);
+    }
+
+    private boolean possuiVinculoAtivo(String funcionarioId) {
+        return funcionarioBarbeariaRepository.existsByFuncionarioIdAndAtivoTrue(funcionarioId);
     }
 
     public boolean verificarDisponibilidadeDoFuncionario(String barbeariaId, String funcionarioId, LocalDateTime dataHora) {
@@ -93,49 +281,4 @@ public class FuncionarioService {
         return agendamentosConflitantes.isEmpty();
     }
 
-    private Barbearia buscarBarbeariaPorId(String barbeariaId) {
-        return barbeariaRepository.findById(barbeariaId)
-                .orElseThrow(() -> new ResourceNotFoundException("Barbearia não encontrada: " + barbeariaId));
-    }
-
-    private void buscarFuncionarioPorId(String funcionarioId) {
-        usuarioRepository.findById(funcionarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Funcionário não encontrado: " + funcionarioId));
-    }
-
-    private void validarEmailDisponivel(String email) {
-        if (usuarioRepository.existsByEmail(email)) {
-            throw new BusinessException("Email já cadastrado: " + email);
-        }
-    }
-
-    private void validarRoleFuncionario(Usuario usuario) {
-        if (usuario.getRole() != UsuarioRole.ROLE_FUNCIONARIO) {
-            throw new BusinessException("Usuário não possui o papel de funcionário");
-        }
-    }
-
-    private void validarFuncionarioNaoVinculadoABarbearia(String funcionarioId, String barbeariaId) {
-        boolean jaVinculado = funcionarioBarbeariaRepository
-                .existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId);
-        if (jaVinculado) {
-            throw new BusinessException("Funcionário já está vinculado a esta barbearia");
-        }
-    }
-
-    private void vincularFuncionarioABarbearia(Usuario funcionario, Barbearia barbearia) {
-        FuncionarioBarbearia vinculo = new FuncionarioBarbearia();
-        vinculo.setFuncionario(funcionario);
-        vinculo.setBarbearia(barbearia);
-        vinculo.setAtivo(true);
-        funcionarioBarbeariaRepository.save(vinculo);
-    }
-
-    private void criarVinculo(Usuario funcionario, Barbearia barbearia) {
-        FuncionarioBarbearia vinculo = new FuncionarioBarbearia();
-        vinculo.setFuncionario(funcionario);
-        vinculo.setBarbearia(barbearia);
-        vinculo.setAtivo(true); // Adicionado para consistência
-        funcionarioBarbeariaRepository.save(vinculo);
-    }
 }

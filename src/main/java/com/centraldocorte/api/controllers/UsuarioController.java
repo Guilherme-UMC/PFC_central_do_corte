@@ -3,6 +3,7 @@ package com.centraldocorte.api.controllers;
 import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.dto.UsuarioRequestDTO;
 import com.centraldocorte.api.dto.UsuarioResponseDTO;
+import com.centraldocorte.api.dto.UsuarioUpdateDTO;
 import com.centraldocorte.api.services.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -57,9 +58,19 @@ public class UsuarioController {
     @Operation(summary = "Atualizar dados do usuário")
     public ResponseEntity<UsuarioResponseDTO> atualizarUsuario(
             @PathVariable String id,
-            @Valid @RequestBody UsuarioRequestDTO request) {
+            @Valid @RequestBody UsuarioUpdateDTO request) {
 
         return ResponseEntity.ok(usuarioService.atualizarUsuario(id, request));
+    }
+
+    @PatchMapping("/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Alterar role do usuário (apenas ADMIN)")
+    public ResponseEntity<UsuarioResponseDTO> alterarRoleUsuario(
+            @PathVariable String id,
+            @RequestParam UsuarioRole role) {
+
+        return ResponseEntity.ok(usuarioService.alterarRoleUsuario(id, role));
     }
 
     @DeleteMapping("/{id}")

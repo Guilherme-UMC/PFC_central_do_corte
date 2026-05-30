@@ -2,31 +2,36 @@ package com.centraldocorte.api.domain.repositories;
 
 import com.centraldocorte.api.domain.models.FuncionarioBarbearia;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface FuncionarioBarbeariaRepository extends JpaRepository<FuncionarioBarbearia, Long> {
+public interface FuncionarioBarbeariaRepository extends JpaRepository<FuncionarioBarbearia, String> {
 
-    // Buscar vínculos ativos de uma barbearia
+    Optional<FuncionarioBarbearia> findByFuncionarioIdAndBarbeariaIdAndAtivoTrue(
+            String funcionarioId, String barbeariaId);
+
+    Optional<FuncionarioBarbearia> findByFuncionarioIdAndBarbeariaId(
+            String funcionarioId, String barbeariaId);
+
+
     List<FuncionarioBarbearia> findByBarbeariaIdAndAtivoTrue(String barbeariaId);
 
-    // Buscar vínculos ativos de um funcionário
-    List<FuncionarioBarbearia> findByFuncionarioIdAndAtivoTrue(String funcionarioId);
+    @Query("SELECT fb FROM FuncionarioBarbearia fb " +
+            "WHERE fb.barbearia.id = :barbeariaId " +
+            "AND fb.ativo = true " +
+            "AND fb.disponivel = true")
+    List<FuncionarioBarbearia> findFuncionariosDisponiveisPorBarbearia(@Param("barbeariaId") String barbeariaId);
 
-    // Buscar vínculo específico por funcionário e barbearia
-    Optional<FuncionarioBarbearia> findByFuncionarioIdAndBarbeariaId(String funcionarioId, String barbeariaId);
-
-    // Verificar se funcionário já está vinculado ativo a uma barbearia
-    boolean existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(String funcionarioId, String barbeariaId);
-
-    // Verificar se funcionário tem vínculo ativo com alguma barbearia
     boolean existsByFuncionarioIdAndAtivoTrue(String funcionarioId);
 
-    // Buscar todas as barbearias de um funcionário (vínculos ativos)
-    List<FuncionarioBarbearia> findByFuncionarioId(String funcionarioId);
+    boolean existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(String funcionarioId, String barbeariaId);
 
-    // Desativar todos os vínculos de um funcionário (útil para demissão)
-    void deleteByFuncionarioId(String funcionarioId);
+    boolean existsByFuncionarioIdAndBarbeariaIdAndAtivoTrueAndDisponivelTrue(
+            String funcionarioId, String barbeariaId);
+
 }

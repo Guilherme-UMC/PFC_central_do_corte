@@ -2,12 +2,11 @@ package com.centraldocorte.api.controllers;
 
 import com.centraldocorte.api.domain.models.Usuario;
 import com.centraldocorte.api.domain.models.enums.UsuarioRole;
-import com.centraldocorte.api.dto.FuncionarioVinculoDTO;
-import com.centraldocorte.api.dto.UsuarioRequestDTO;
-import com.centraldocorte.api.dto.UsuarioResponseDTO;
+import com.centraldocorte.api.dto.*;
 import com.centraldocorte.api.services.FuncionarioService;
 import com.centraldocorte.api.services.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -32,22 +31,21 @@ public class FuncionarioController {
 
     @PostMapping("/barbearia/{barbeariaId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
-    @Operation(summary = "Criar novo funcionário e vincular à barbearia")
+    @Operation(summary = "Criar novo funcionário")
     public ResponseEntity<UsuarioResponseDTO> criarFuncionario(
+            @Parameter(description = "ID da barbearia", required = true)
             @PathVariable String barbeariaId,
-            @Valid @RequestBody UsuarioRequestDTO request) {
+            @Valid @RequestBody RegisterRequestDTO request) {
 
-        Usuario novoFuncionario = montarFuncionarioAPartirDoRequest(request);
-        Usuario funcionarioSalvo = funcionarioService.criarFuncionario(barbeariaId, novoFuncionario);
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(usuarioService.converterParaResponseDTO(funcionarioSalvo));
+        UsuarioResponseDTO response = funcionarioService.criarFuncionario(barbeariaId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/barbearia/{barbeariaId}/vincular")
     @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
-    @Operation(summary = "Vincular funcionário existente à barbearia")
+    @Operation(summary = "Vincular funcionário existente")
     public ResponseEntity<Void> vincularFuncionarioExistente(
+            @Parameter(description = "ID da barbearia", required = true)
             @PathVariable String barbeariaId,
             @Valid @RequestBody FuncionarioVinculoDTO dto) {
 
@@ -57,23 +55,29 @@ public class FuncionarioController {
 
     @GetMapping("/barbearia/{barbeariaId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM', 'FUNCIONARIO', 'CLIENTE')")
-    @Operation(summary = "Listar todos os funcionários de uma barbearia")
+    @Operation(summary = "Listar todos os funcionários vinculados a uma barbearia")
     public ResponseEntity<List<UsuarioResponseDTO>> listarFuncionariosPorBarbearia(
+            @Parameter(description = "ID da barbearia", required = true)
             @PathVariable String barbeariaId) {
 
-        List<UsuarioResponseDTO> funcionarios = funcionarioService.listarFuncionariosBarbearia(barbeariaId)
-                .stream()
-                .map(usuarioService::converterParaResponseDTO)
-                .toList();
-
-        return ResponseEntity.ok(funcionarios);
+        return ResponseEntity.ok(funcionarioService.listarFuncionariosPorBarbearia(barbeariaId));
     }
 
-    @GetMapping("/disponiveis")
+    @GetMapping("/barbearia/{barbeariaId}/disponiveis")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM', 'CLIENTE')")
+    @Operation(summary = "Listar funcionários disponíveis para agendamento")
+    public ResponseEntity<List<UsuarioResponseDTO>> listarFuncionariosDisponiveisParaAgendamento(
+            @Parameter(description = "ID da barbearia", required = true)
+            @PathVariable String barbeariaId) {
+
+        return ResponseEntity.ok(funcionarioService.listarFuncionariosDisponiveisParaAgendamento(barbeariaId));
+    }
+
+    @GetMapping("/disponiveis-para-contratacao")
     @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
-    @Operation(summary = "Listar funcionários disponíveis (sem vínculo com nenhuma barbearia)")
-    public ResponseEntity<List<UsuarioResponseDTO>> listarFuncionariosDisponiveis() {
-        return ResponseEntity.ok(funcionarioService.listarFuncionariosDisponiveis());
+    @Operation(summary = "Listar funcionários disponíveis para contratação (sem vínculo)")
+    public ResponseEntity<List<UsuarioResponseDTO>> listarFuncionariosDisponiveisParaContratacao() {
+        return ResponseEntity.ok(funcionarioService.listarFuncionariosDisponiveisParaContratacao());
     }
 
     @GetMapping("/todos")
@@ -95,35 +99,60 @@ public class FuncionarioController {
     @Operation(summary = "Atualizar dados do funcionário")
     public ResponseEntity<UsuarioResponseDTO> atualizarFuncionario(
             @PathVariable String funcionarioId,
-            @Valid @RequestBody UsuarioRequestDTO request) {
+            @Valid @RequestBody UsuarioUpdateDTO request) {
 
         return ResponseEntity.ok(usuarioService.atualizarUsuario(funcionarioId, request));
     }
 
     @DeleteMapping("/barbearia/{barbeariaId}/desvincular/{funcionarioId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
-    @Operation(summary = "Desvincular funcionário da barbearia")
+    @Operation(summary = "Desvincular funcionário (mantém conta ativa)")
     public ResponseEntity<Void> desvincularFuncionario(
+            @Parameter(description = "ID da barbearia", required = true)
             @PathVariable String barbeariaId,
+            @Parameter(description = "ID do funcionário", required = true)
             @PathVariable String funcionarioId) {
 
         funcionarioService.desvincularFuncionario(barbeariaId, funcionarioId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{funcionarioId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Desativar funcionário (soft delete - apenas ADMIN)")
-    public ResponseEntity<Void> desativarFuncionario(@PathVariable String funcionarioId) {
-        usuarioService.desativarUsuario(funcionarioId);
+    @DeleteMapping("/barbearia/{barbeariaId}/desativar/{funcionarioId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
+    @Operation(summary = "Desativar funcionário (soft delete - bloqueia acesso)")
+    public ResponseEntity<Void> desativarFuncionario(
+            @Parameter(description = "ID da barbearia", required = true)
+            @PathVariable String barbeariaId,
+            @Parameter(description = "ID do funcionário", required = true)
+            @PathVariable String funcionarioId) {
+
+        funcionarioService.desativarFuncionario(barbeariaId, funcionarioId);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{funcionarioId}/status")
+    @PatchMapping("/barbearia/{barbeariaId}/reativar/{funcionarioId}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Ativar/desativar funcionário (apenas ADMIN)")
-    public ResponseEntity<Void> alternarStatusDoFuncionario(@PathVariable String funcionarioId) {
-        usuarioService.alternarStatusDoUsuario(funcionarioId);
+    @Operation(summary = "Reativar funcionário desativado")
+    public ResponseEntity<Void> reativarFuncionario(
+            @Parameter(description = "ID da barbearia", required = true)
+            @PathVariable String barbeariaId,
+            @Parameter(description = "ID do funcionário", required = true)
+            @PathVariable String funcionarioId) {
+
+        funcionarioService.reativarFuncionario(barbeariaId, funcionarioId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/barbearia/{barbeariaId}/{funcionarioId}/disponibilidade")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
+    @Operation(summary = "Alternar disponibilidade temporária (férias/folgas)")
+    public ResponseEntity<Void> alternarDisponibilidadeFuncionario(
+            @Parameter(description = "ID da barbearia", required = true)
+            @PathVariable String barbeariaId,
+            @Parameter(description = "ID do funcionário", required = true)
+            @PathVariable String funcionarioId) {
+
+        funcionarioService.alternarDisponibilidadeFuncionario(barbeariaId, funcionarioId);
         return ResponseEntity.noContent().build();
     }
 
@@ -139,16 +168,5 @@ public class FuncionarioController {
                 barbeariaId, funcionarioId, LocalDateTime.parse(dataHora));
 
         return ResponseEntity.ok(disponivel);
-    }
-
-    private Usuario montarFuncionarioAPartirDoRequest(UsuarioRequestDTO request) {
-        Usuario funcionario = new Usuario();
-        funcionario.setName(request.getName());
-        funcionario.setEmail(request.getEmail());
-        funcionario.setPassword(request.getPassword());
-        funcionario.setTelefone(request.getTelefone());
-        funcionario.setRole(UsuarioRole.ROLE_FUNCIONARIO);
-        funcionario.setActive(true);
-        return funcionario;
     }
 }

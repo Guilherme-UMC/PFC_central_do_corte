@@ -6,6 +6,7 @@ import com.centraldocorte.api.domain.repositories.UsuarioRepository;
 import com.centraldocorte.api.domain.repositories.FuncionarioBarbeariaRepository;
 import com.centraldocorte.api.dto.UsuarioResponseDTO;
 import com.centraldocorte.api.dto.UsuarioRequestDTO;
+import com.centraldocorte.api.dto.UsuarioUpdateDTO;
 import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.exception.EmailAlreadyExistsException;
 import com.centraldocorte.api.exception.ResourceNotFoundException;
@@ -64,21 +65,35 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> listarTodosFuncionarios() {
-        return buscarPorRole(UsuarioRole.ROLE_FUNCIONARIO);
-    }
-
-    @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> listarFuncionariosDisponiveis() {
         return usuarioRepository.findByRoleAndActiveTrue(UsuarioRole.ROLE_FUNCIONARIO)
                 .stream()
-                .filter(funcionario -> !funcionarioEstaVinculado(funcionario.getId()))
                 .map(this::converterParaResponseDTO)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public boolean funcionarioEstaVinculado(String funcionarioId) {
-        return funcionarioBarbeariaRepository.existsByFuncionarioIdAndAtivoTrue(funcionarioId);
+    public Usuario buscarUsuarioPorIdIncluindoInativos(String id) {
+        return usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public Usuario buscarUsuarioPorEmailIncluindoInativos(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + email));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsById(String id) {
+        return usuarioRepository.existsById(id);
+    }
+
+    @Transactional
+    public void setActiveStatus(String id, boolean active) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
+        usuario.setActive(active);
+        usuarioRepository.save(usuario);
     }
 
     @Transactional
@@ -92,7 +107,7 @@ public class UsuarioService {
     }
 
     @Transactional
-    public UsuarioResponseDTO atualizarUsuario(String id, UsuarioRequestDTO request) {
+    public UsuarioResponseDTO atualizarUsuario(String id, UsuarioUpdateDTO request) {
         Usuario usuario = usuarioRepository.findById(id)
                 .filter(Usuario::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
@@ -138,6 +153,17 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
+    @Transactional
+    public UsuarioResponseDTO alterarRoleUsuario(String id, UsuarioRole novaRole) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
+
+        usuario.setRole(novaRole);
+        usuario = usuarioRepository.save(usuario);
+
+        return converterParaResponseDTO(usuario);
+    }
+
     public boolean existeAdministrador() {
         return usuarioRepository.existsByRoleAndActiveTrue(UsuarioRole.ROLE_ADMIN);
     }
@@ -159,11 +185,10 @@ public class UsuarioService {
         return usuario;
     }
 
-    private void atualizarCamposDoUsuario(Usuario usuario, UsuarioRequestDTO request) {
+    private void atualizarCamposDoUsuario(Usuario usuario, UsuarioUpdateDTO  request) {
         if (request.getName() != null) usuario.setName(request.getName());
         if (request.getEmail() != null) usuario.setEmail(request.getEmail());
         if (request.getTelefone() != null) usuario.setTelefone(request.getTelefone());
-        if (request.getRole() != null) usuario.setRole(request.getRole());
     }
 
     public UsuarioResponseDTO converterParaResponseDTO(Usuario usuario) {
