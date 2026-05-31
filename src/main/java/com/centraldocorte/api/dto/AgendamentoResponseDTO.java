@@ -17,6 +17,10 @@ public class AgendamentoResponseDTO {
     private Double servicoPreco;
     private Integer servicoDuracao;
 
+    // ✅ Campos do funcionário
+    private String funcionarioId;
+    private String funcionarioNome;
+
     @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
     private LocalDateTime dataHora;
 

@@ -43,12 +43,8 @@ public class Agendamento {
     @Column(name = "atualizado_em")
     private LocalDateTime atualizadoEm;
 
-    // ================================
-    // CONSTRUTORES
-    // ================================
-
-    public Agendamento() {
-    }
+    // Construtores
+    public Agendamento() {}
 
     public Agendamento(Long id, Barbearia barbearia, Usuario cliente, Servico servico,
                        Usuario funcionario, LocalDateTime dataHora, StatusAgendamento status,
@@ -65,10 +61,6 @@ public class Agendamento {
         this.atualizadoEm = atualizadoEm;
     }
 
-    // ================================
-    // MÉTODOS DE CICLO DE VIDA
-    // ================================
-
     @PrePersist
     protected void onCreate() {
         criadoEm = LocalDateTime.now();
@@ -80,10 +72,7 @@ public class Agendamento {
         atualizadoEm = LocalDateTime.now();
     }
 
-    // ================================
-    // GETTERS E SETTERS
-    // ================================
-
+    // Getters e Setters
     public Long getId() {
         return id;
     }

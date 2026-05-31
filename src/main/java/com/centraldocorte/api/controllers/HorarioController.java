@@ -40,9 +40,9 @@ public class HorarioController {
 
     @PutMapping("/{id}/horarios")
     @PreAuthorize("hasRole('BARBEARIA_ADM')")
-    public ResponseEntity<List<HorarioFuncionamentoDTO>> updateHorarios(  // ← CORRIGIDO: retorna DTO
-                                                                          @PathVariable String id,
-                                                                          @Valid @RequestBody List<HorarioFuncionamentoDTO> horarios) {
+    public ResponseEntity<List<HorarioFuncionamentoDTO>> updateHorarios(
+      @PathVariable String id,
+      @Valid @RequestBody List<HorarioFuncionamentoDTO> horarios) {
 
         List<HorarioFuncionamento> saved = horarioService.saveHorarios(id, horarios);
 
