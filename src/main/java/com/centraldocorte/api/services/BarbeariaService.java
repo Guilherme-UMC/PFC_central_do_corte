@@ -3,6 +3,7 @@ package com.centraldocorte.api.services;
 import com.centraldocorte.api.domain.models.Barbearia;
 import com.centraldocorte.api.domain.models.Usuario;
 import com.centraldocorte.api.domain.repositories.BarbeariaRepository;
+import com.centraldocorte.api.domain.repositories.HorarioFuncionamentoRepository;
 import com.centraldocorte.api.dto.BarbeariaRequestDTO;
 import com.centraldocorte.api.dto.BarbeariaResponseDTO;
 import com.centraldocorte.api.dto.ViaCepResponseDTO;
@@ -23,14 +24,20 @@ import java.util.Map;
 public class BarbeariaService {
 
     private final BarbeariaRepository barbeariaRepository;
+    private final HorarioFuncionamentoRepository horarioRepository; // Mantenha se usar em outros métodos
 
     @Transactional
     public BarbeariaResponseDTO criarBarbearia(BarbeariaRequestDTO request, Usuario proprietario) {
         Barbearia barbearia = montarBarbeariaAPartirDoRequest(request);
         barbearia.setOwner(proprietario);
         Barbearia barbeariaSalva = barbeariaRepository.save(barbearia);
+
+        // ⚠️ NÃO CRIAR HORÁRIOS AQUI - Eles já vêm da migration ou trigger
+
         return converterParaResponseDTO(barbeariaSalva);
     }
+
+    // ========== RESTANTE DO CÓDIGO (mantenha o que você já tem) ==========
 
     @Transactional(readOnly = true)
     public Page<BarbeariaResponseDTO> listarBarbeariasAtivas(Pageable pageable) {
@@ -42,7 +49,6 @@ public class BarbeariaService {
     public BarbeariaResponseDTO buscarPorId(String id) {
         Barbearia barbearia = barbeariaRepository.findByIdAndAtivoTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Barbearia não encontrada com ID: " + id));
-
         return converterParaResponseDTO(barbearia);
     }
 
@@ -109,7 +115,6 @@ public class BarbeariaService {
     @Transactional(readOnly = true)
     public List<BarbeariaResponseDTO> buscarPorCep(String cep) {
         String cepLimpo = cep.replaceAll("\\D", "");
-
         return barbeariaRepository.findByCepAndAtivoTrue(cepLimpo)
                 .stream()
                 .map(this::converterParaResponseDTO)
