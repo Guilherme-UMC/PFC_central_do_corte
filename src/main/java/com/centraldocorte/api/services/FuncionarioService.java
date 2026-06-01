@@ -6,10 +6,7 @@ import com.centraldocorte.api.domain.repositories.AgendamentoRepository;
 import com.centraldocorte.api.domain.repositories.BarbeariaRepository;
 import com.centraldocorte.api.domain.repositories.FuncionarioBarbeariaRepository;
 import com.centraldocorte.api.domain.repositories.UsuarioRepository;
-import com.centraldocorte.api.dto.FuncionarioVinculoDTO;
-import com.centraldocorte.api.dto.RegisterRequestDTO;
-import com.centraldocorte.api.dto.RegisterResponseDTO;
-import com.centraldocorte.api.dto.UsuarioResponseDTO;
+import com.centraldocorte.api.dto.*;
 import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -119,6 +117,14 @@ public class FuncionarioService {
         validarFuncionarioExiste(funcionarioId);
         validarBarbeariaExistente(barbeariaId);
 
+        LocalDateTime agora = LocalDateTime.now();
+        List<Agendamento> agendamentosFuturos = agendamentoRepository
+                .findFutureAgendamentosByFuncionarioId(funcionarioId, agora);
+
+        if (!agendamentosFuturos.isEmpty()) {
+            transferirAgendamentos(funcionarioId, barbeariaId, agendamentosFuturos);
+        }
+
         FuncionarioBarbearia vinculo = funcionarioBarbeariaRepository
                 .findByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vínculo ativo não encontrado"));
@@ -127,6 +133,81 @@ public class FuncionarioService {
         funcionarioBarbeariaRepository.save(vinculo);
 
         log.info("Funcionário desvinculado com sucesso");
+    }
+
+    private void transferirAgendamentos(String funcionarioId,
+                                        String barbeariaId,
+                                        List<Agendamento> agendamentos) {
+        String nomeFuncionarioOriginal = buscarNomeFuncionarioPorId(funcionarioId);
+
+        for (Agendamento agendamento : agendamentos) {
+            Usuario substituto = buscarFuncionarioSubstitutoDisponivel(
+                    barbeariaId,
+                    funcionarioId,
+                    agendamento.getDataHora()
+            );
+
+            if (substituto == null) {
+                throw new BusinessException(
+                        String.format("Não foi possível transferir agendamento do dia %s. Nenhum substituto disponível.",
+                                agendamento.getDataHora().toLocalDate())
+                );
+            }
+
+            String observacao = String.format(
+                    "Transferido do funcionário %s para %s em %s. %s",
+                    nomeFuncionarioOriginal,
+                    substituto.getName(),
+                    LocalDateTime.now(),
+                    agendamento.getObservacao() != null ? agendamento.getObservacao() : ""
+            );
+
+            agendamento.setFuncionario(substituto);
+            agendamento.setObservacao(observacao);
+            agendamentoRepository.save(agendamento);
+        }
+    }
+
+    private String buscarNomeFuncionarioPorId(String funcionarioId) {
+        return usuarioRepository.findById(funcionarioId)
+                .map(Usuario::getName)
+                .orElse("Funcionário desconhecido (ID: " + funcionarioId + ")");
+    }
+
+    private Usuario buscarFuncionarioSubstitutoDisponivel(String barbeariaId,
+                                                          String funcionarioExcluidoId,
+                                                          LocalDateTime dataHora) {
+        List<FuncionarioBarbearia> vinculos = funcionarioBarbeariaRepository
+                .findFuncionariosDisponiveisPorBarbearia(barbeariaId);
+
+        for (FuncionarioBarbearia vinculo : vinculos) {
+            Usuario funcionario = vinculo.getFuncionario();
+
+            if (funcionario.getId().equals(funcionarioExcluidoId)) {
+                continue;
+            }
+
+            if (!funcionario.isActive()) {
+                log.debug("Funcionário {} está inativo no sistema, ignorando", funcionario.getId());
+                continue;
+            }
+
+            if (!vinculo.getAtivo()) {
+                log.debug("Vínculo do funcionário {} está inativo, ignorando", funcionario.getId());
+                continue;
+            }
+
+            long conflitos = agendamentoRepository.countAgendamentosPorFuncionarioNoHorario(
+                    funcionario.getId(), dataHora);
+
+            if (conflitos == 0) {
+                log.info("Substituto encontrado: {} (ID: {})", funcionario.getName(), funcionario.getId());
+                return funcionario;
+            }
+        }
+
+        log.warn("Nenhum substituto disponível encontrado para barbearia {} no horário {}", barbeariaId, dataHora);
+        return null;
     }
 
     @Transactional
@@ -281,4 +362,37 @@ public class FuncionarioService {
         return agendamentosConflitantes.isEmpty();
     }
 
+    @Transactional(readOnly = true)
+    public List<BarbeariaResponseDTO> listarBarbeariasPorFuncionario(String funcionarioId) {
+        log.debug("Listando barbearias do funcionário: {}", funcionarioId);
+
+        validarFuncionarioExiste(funcionarioId);
+
+        return funcionarioBarbeariaRepository.findByFuncionarioIdAndAtivoTrue(funcionarioId)
+                .stream()
+                .map(FuncionarioBarbearia::getBarbearia)
+                .map(this::converterBarbeariaParaResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    private BarbeariaResponseDTO converterBarbeariaParaResponseDTO(Barbearia barbearia) {
+        return BarbeariaResponseDTO.builder()
+                .id(barbearia.getId())
+                .ownerId(barbearia.getOwner() != null ? barbearia.getOwner().getId() : null)
+                .ownerName(barbearia.getOwner() != null ? barbearia.getOwner().getName() : null)
+                .nome(barbearia.getNome())
+                .descricao(barbearia.getDescricao())
+                .logradouro(barbearia.getLogradouro())
+                .numero(barbearia.getNumero())
+                .bairro(barbearia.getBairro())
+                .cep(barbearia.getCep())
+                .cidade(barbearia.getCidade())
+                .uf(barbearia.getUf())
+                .imgUrl(barbearia.getImgUrl())
+                .telefone(barbearia.getTelefone())
+                .criadoEm(barbearia.getCriadoEm())
+                .atualizadoEm(barbearia.getAtualizadoEm())
+                .ativo(barbearia.getAtivo())
+                .build();
+    }
 }

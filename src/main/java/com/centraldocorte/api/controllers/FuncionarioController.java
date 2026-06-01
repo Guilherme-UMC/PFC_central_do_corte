@@ -3,6 +3,7 @@ package com.centraldocorte.api.controllers;
 import com.centraldocorte.api.domain.models.Usuario;
 import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.dto.*;
+import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.services.FuncionarioService;
 import com.centraldocorte.api.services.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,10 +15,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/funcionarios")
@@ -107,14 +112,29 @@ public class FuncionarioController {
     @DeleteMapping("/barbearia/{barbeariaId}/desvincular/{funcionarioId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
     @Operation(summary = "Desvincular funcionário (mantém conta ativa)")
-    public ResponseEntity<Void> desvincularFuncionario(
+    public ResponseEntity<?> desvincularFuncionario(
             @Parameter(description = "ID da barbearia", required = true)
             @PathVariable String barbeariaId,
             @Parameter(description = "ID do funcionário", required = true)
             @PathVariable String funcionarioId) {
 
-        funcionarioService.desvincularFuncionario(barbeariaId, funcionarioId);
-        return ResponseEntity.noContent().build();
+        try {
+            funcionarioService.desvincularFuncionario(barbeariaId, funcionarioId);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Funcionário desvinculado com sucesso");
+            response.put("status", "SUCCESS");
+
+            return ResponseEntity.ok(response);
+
+        } catch (BusinessException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("status", "ERROR");
+            errorResponse.put("suggestion", "Remaneje os agendamentos manualmente antes de desvincular o funcionário");
+
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorResponse);
+        }
     }
 
     @DeleteMapping("/barbearia/{barbeariaId}/desativar/{funcionarioId}")
@@ -168,5 +188,17 @@ public class FuncionarioController {
                 barbeariaId, funcionarioId, LocalDateTime.parse(dataHora));
 
         return ResponseEntity.ok(disponivel);
+    }
+
+    @GetMapping("/barbearias")
+    @PreAuthorize("hasRole('FUNCIONARIO')")
+    @Operation(summary = "Listar barbearias onde o funcionário está vinculado")
+    public ResponseEntity<List<BarbeariaResponseDTO>> listarBarbeariasDoFuncionario(Authentication authentication) {
+        String email = authentication.getName();
+
+        Usuario funcionario = usuarioService.buscarPorEmail(email);
+
+        List<BarbeariaResponseDTO> barbearias = funcionarioService.listarBarbeariasPorFuncionario(funcionario.getId());
+        return ResponseEntity.ok(barbearias);
     }
 }

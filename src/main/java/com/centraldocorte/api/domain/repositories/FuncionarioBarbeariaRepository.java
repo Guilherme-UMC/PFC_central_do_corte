@@ -29,6 +29,8 @@ public interface FuncionarioBarbeariaRepository extends JpaRepository<Funcionari
 
     boolean existsByFuncionarioIdAndAtivoTrue(String funcionarioId);
 
+    List<FuncionarioBarbearia> findByFuncionarioIdAndAtivoTrue(String funcionarioId);
+
     boolean existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(String funcionarioId, String barbeariaId);
 
     boolean existsByFuncionarioIdAndBarbeariaIdAndAtivoTrueAndDisponivelTrue(

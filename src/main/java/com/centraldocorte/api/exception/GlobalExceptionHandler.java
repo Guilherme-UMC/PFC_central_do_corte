@@ -1,7 +1,7 @@
+
 package com.centraldocorte.api.exception;
 
-import com.centraldocorte.api.exception.BusinessException;
-import com.centraldocorte.api.exception.ResourceNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,8 +15,22 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<RespostaDeErro> tratarRegraDeNegocio(BusinessException ex) {
+        log.error("BusinessException capturada: {}", ex.getMessage());
+
+        RespostaDeErro erro = new RespostaDeErro(
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                "Erro de negócio",
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(erro);
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<RespostaDeErro> tratarRecursoNaoEncontrado(ResourceNotFoundException ex) {
@@ -51,18 +65,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(erro);
     }
 
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<RespostaDeErro> tratarRegraDeNegocio(BusinessException ex) {
-        RespostaDeErro erro = new RespostaDeErro(
-                HttpStatus.UNPROCESSABLE_ENTITY.value(),
-                "Erro de negócio",
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(erro);
-    }
-
-    // ✅ ADICIONAR ESTE MÉTODO
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<RespostaDeErro> tratarNaoAutorizado(UnauthorizedException ex) {
         RespostaDeErro erro = new RespostaDeErro(
@@ -117,6 +119,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<RespostaDeErro> tratarErroGenerico(Exception ex) {
+        log.error("Erro não tratado: ", ex);
+
         RespostaDeErro erro = new RespostaDeErro(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Erro interno do servidor",
@@ -131,14 +135,12 @@ public class GlobalExceptionHandler {
             String titulo,
             String mensagem,
             LocalDateTime timestamp
-    ) {
-    }
+    ) {}
 
     record RespostaDeErroDeValidacao(
             int status,
             String titulo,
             Map<String, String> errosPorCampo,
             LocalDateTime timestamp
-    ) {
-    }
+    ) {}
 }

@@ -3,6 +3,7 @@ package com.centraldocorte.api.domain.repositories;
 import com.centraldocorte.api.domain.models.Agendamento;
 import com.centraldocorte.api.domain.models.enums.StatusAgendamento;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -40,4 +41,28 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     // Contar agendamentos de um funcionário em um horário específico
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.funcionario.id = :funcionarioId AND a.dataHora = :dataHora AND a.status <> 'CANCELADO_PELO_CLIENTE' AND a.status <> 'CANCELADO_PELA_BARBEARIA'")
     long countAgendamentosPorFuncionarioNoHorario(@Param("funcionarioId") String funcionarioId, @Param("dataHora") LocalDateTime dataHora);
+
+    //Busca agendamentos futuros de um funcionário (não cancelados e não concluídos)
+    @Query("SELECT a FROM Agendamento a WHERE a.funcionario.id = :funcionarioId " +
+            "AND a.dataHora > :agora " +
+            "AND a.status <> 'CANCELADO_PELO_CLIENTE' " +
+            "AND a.status <> 'CANCELADO_PELA_BARBEARIA' " +
+            "AND a.status <> 'CONCLUIDO' " +
+            "ORDER BY a.dataHora ASC")
+    List<Agendamento> findFutureAgendamentosByFuncionarioId(@Param("funcionarioId") String funcionarioId,
+                                                            @Param("agora") LocalDateTime agora);
+
+   // Atualiza o funcionário de um agendamento (para transferência)
+    @Modifying
+    @Query("UPDATE Agendamento a SET a.funcionario.id = :novoFuncionarioId, " +
+            "a.observacao = CONCAT(a.observacao, :observacaoTransferencia) " +
+            "WHERE a.id = :agendamentoId")
+    void transferirAgendamentoParaOutroFuncionario(@Param("agendamentoId") Long agendamentoId,
+                                                   @Param("novoFuncionarioId") String novoFuncionarioId,
+                                                   @Param("observacaoTransferencia") String observacaoTransferencia);
+
+    List<Agendamento> findByFuncionarioIdOrderByDataHoraDesc(String funcionarioId);
+
+    @Query("SELECT a FROM Agendamento a WHERE a.funcionario.id = :funcionarioId AND DATE(a.dataHora) = CURRENT_DATE ORDER BY a.dataHora")
+    List<Agendamento> findAgendamentosDoDiaByFuncionarioId(@Param("funcionarioId") String funcionarioId);
 }

@@ -38,10 +38,6 @@ public class AgendamentoService {
     private final HorarioService horarioService;
     private final DisponibilidadeService disponibilidadeService;
 
-    // ================================
-    // MÉTODOS PRIVADOS AUXILIARES
-    // ================================
-
     private Usuario getUsuarioAutenticado() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return usuarioRepository.findByEmail(email)
@@ -55,17 +51,14 @@ public class AgendamentoService {
         dto.setClienteNome(agendamento.getCliente().getName());
         dto.setServicoNome(agendamento.getServico().getNome());
 
-        // Nome do funcionário (se existir)
         if (agendamento.getFuncionario() != null) {
             dto.setFuncionarioNome(agendamento.getFuncionario().getName());
             dto.setFuncionarioId(agendamento.getFuncionario().getId());
         }
 
-        // Tratamento do preço (BigDecimal para Double)
         BigDecimal preco = agendamento.getServico().getPreco();
         dto.setServicoPreco(preco != null ? preco.doubleValue() : 0.0);
 
-        // Duração do serviço
         dto.setServicoDuracao(agendamento.getServico().getDuracaoMinutos() != null ?
                 agendamento.getServico().getDuracaoMinutos() : 30);
 
@@ -76,22 +69,14 @@ public class AgendamentoService {
         return dto;
     }
 
-    // ================================
-    // MÉTODOS PÚBLICOS
-    // ================================
-
-    /**
-     * Cria um novo agendamento
-     */
     @Transactional
     public AgendamentoResponseDTO criarAgendamento(AgendamentoRequestDTO request) {
-        // 1. Validar cliente
+
         Usuario cliente = getUsuarioAutenticado();
         if (cliente.getRole() != UsuarioRole.ROLE_CLIENTE) {
             throw new BusinessException("Apenas clientes podem realizar agendamentos");
         }
 
-        // 2. Validar barbearia
         Barbearia barbearia = barbeariaRepository.findById(request.getBarbeariaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Barbearia não encontrada"));
 
@@ -99,7 +84,6 @@ public class AgendamentoService {
             throw new BusinessException("Esta barbearia está inativa no momento");
         }
 
-        // 3. Validar serviço
         Servico servico = servicoRepository.findById(request.getServicoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado"));
 
@@ -107,13 +91,11 @@ public class AgendamentoService {
             throw new BusinessException("Este serviço não pertence à barbearia selecionada");
         }
 
-        // 4. Validar funcionário (se foi informado)
         Usuario funcionario = null;
         if (request.getFuncionarioId() != null && !request.getFuncionarioId().isEmpty()) {
             funcionario = usuarioRepository.findById(request.getFuncionarioId())
                     .orElseThrow(() -> new ResourceNotFoundException("Funcionário não encontrado"));
 
-            // Verificar se o funcionário pertence à barbearia
             boolean pertenceABarbearia = funcionarioBarbeariaRepository
                     .existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionario.getId(), barbearia.getId());
 
@@ -121,13 +103,11 @@ public class AgendamentoService {
                 throw new BusinessException("Este funcionário não pertence à barbearia selecionada");
             }
 
-            // Verificar se o funcionário tem o papel correto
             if (funcionario.getRole() != UsuarioRole.ROLE_FUNCIONARIO) {
                 throw new BusinessException("O usuário selecionado não é um funcionário");
             }
         }
 
-        // 5. Validar horário
         if (request.getDataHora().isBefore(LocalDateTime.now())) {
             throw new BusinessException("Não é possível agendar para data/hora passada");
         }
@@ -136,7 +116,6 @@ public class AgendamentoService {
             throw new BusinessException("A barbearia não está aberta neste horário");
         }
 
-        // Verificar disponibilidade do horário (considerando funcionário específico)
         if (funcionario != null) {
             if (!disponibilidadeService.isHorarioDisponivelParaFuncionario(funcionario.getId(), request.getDataHora())) {
                 throw new BusinessException("Este funcionário não está disponível no horário selecionado");
@@ -147,7 +126,6 @@ public class AgendamentoService {
             }
         }
 
-        // 6. Criar agendamento
         Agendamento agendamento = new Agendamento();
         agendamento.setBarbearia(barbearia);
         agendamento.setCliente(cliente);
@@ -161,9 +139,6 @@ public class AgendamentoService {
         return convertToResponseDTO(saved);
     }
 
-    /**
-     * Cancela um agendamento existente
-     */
     @Transactional
     public AgendamentoResponseDTO cancelarAgendamento(Long agendamentoId, String motivo) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
@@ -205,9 +180,6 @@ public class AgendamentoService {
         return convertToResponseDTO(updated);
     }
 
-    /**
-     * Confirma um agendamento (apenas dono da barbearia)
-     */
     @Transactional
     public AgendamentoResponseDTO confirmarAgendamento(Long agendamentoId) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
@@ -228,9 +200,7 @@ public class AgendamentoService {
         return convertToResponseDTO(updated);
     }
 
-    /**
-     * Conclui um agendamento (após o serviço ser realizado)
-     */
+
     @Transactional
     public AgendamentoResponseDTO concluirAgendamento(Long agendamentoId) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
@@ -251,9 +221,6 @@ public class AgendamentoService {
         return convertToResponseDTO(updated);
     }
 
-    /**
-     * Lista todos os agendamentos do cliente autenticado
-     */
     public List<AgendamentoResponseDTO> getAgendamentosDoCliente() {
         Usuario cliente = getUsuarioAutenticado();
         return agendamentoRepository.findByClienteIdOrderByDataHoraDesc(cliente.getId())
@@ -262,9 +229,6 @@ public class AgendamentoService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Lista todos os agendamentos de uma barbearia (apenas dono ou admin)
-     */
     public List<AgendamentoResponseDTO> getAgendamentosDaBarbearia(String barbeariaId) {
         Usuario usuario = getUsuarioAutenticado();
 
@@ -282,9 +246,7 @@ public class AgendamentoService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Lista os agendamentos do dia para uma barbearia
-     */
+
     public List<AgendamentoResponseDTO> getAgendamentosDoDia(String barbeariaId) {
         Usuario usuario = getUsuarioAutenticado();
 
@@ -297,6 +259,36 @@ public class AgendamentoService {
 
         return agendamentoRepository.findAgendamentosDoDia(barbeariaId)
                 .stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<AgendamentoResponseDTO> getAgendamentosDoFuncionario() {
+        Usuario funcionario = getUsuarioAutenticado();
+
+        if (funcionario.getRole() != UsuarioRole.ROLE_FUNCIONARIO) {
+            throw new UnauthorizedException("Apenas funcionários podem acessar esta funcionalidade");
+        }
+
+        List<Agendamento> agendamentos = agendamentoRepository
+                .findByFuncionarioIdOrderByDataHoraDesc(funcionario.getId());
+
+        return agendamentos.stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<AgendamentoResponseDTO> getAgendamentosDoDiaDoFuncionario() {
+        Usuario funcionario = getUsuarioAutenticado();
+
+        if (funcionario.getRole() != UsuarioRole.ROLE_FUNCIONARIO) {
+            throw new UnauthorizedException("Apenas funcionários podem acessar esta funcionalidade");
+        }
+
+        List<Agendamento> agendamentos = agendamentoRepository
+                .findAgendamentosDoDiaByFuncionarioId(funcionario.getId());
+
+        return agendamentos.stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
     }
