@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -33,7 +34,7 @@ public class ServicoController {
     }
 
     @GetMapping("/barbearia/{barbeariaId}")
-    @PreAuthorize("hasAnyRole('ADMIN','BARBEARIA_ADM', 'FUNCIONARIO', 'CLIENTE')")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<ServicoResponseDTO>> listarServicosBarbearia(@PathVariable String barbeariaId) {
         List<ServicoResponseDTO> servicos = servicoService.listarServicosAtivosBarbearia(barbeariaId);
         return ResponseEntity.ok(servicos);

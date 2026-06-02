@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -140,6 +141,8 @@ public class FuncionarioService {
                                         List<Agendamento> agendamentos) {
         String nomeFuncionarioOriginal = buscarNomeFuncionarioPorId(funcionarioId);
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
+
         for (Agendamento agendamento : agendamentos) {
             Usuario substituto = buscarFuncionarioSubstitutoDisponivel(
                     barbeariaId,
@@ -154,11 +157,13 @@ public class FuncionarioService {
                 );
             }
 
+            String dataHoraTranferencia = LocalDateTime.now().format(formatter);
+
             String observacao = String.format(
                     "Transferido do funcionário %s para %s em %s. %s",
                     nomeFuncionarioOriginal,
                     substituto.getName(),
-                    LocalDateTime.now(),
+                    dataHoraTranferencia,
                     agendamento.getObservacao() != null ? agendamento.getObservacao() : ""
             );
 

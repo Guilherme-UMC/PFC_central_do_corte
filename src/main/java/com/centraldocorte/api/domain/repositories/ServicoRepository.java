@@ -19,4 +19,10 @@ public interface ServicoRepository extends JpaRepository<Servico, String> {
 
     // Buscar serviços por faixa de preço
     List<Servico> findByBarbeariaIdAndAtivoTrueAndPrecoBetween(String barbeariaId, Double precoMin, Double precoMax);
+
+    // Buscar serviços ativos pelo nome em QUALQUER barbearia (busca global)
+    List<Servico> findByAtivoTrueAndNomeContainingIgnoreCase(String nome);
+
+    // Buscar serviços ativos por descrição (busca global)
+    List<Servico> findByAtivoTrueAndDescricaoContainingIgnoreCase(String descricao);
 }
