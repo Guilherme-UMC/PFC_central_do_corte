@@ -6,10 +6,15 @@ import com.centraldocorte.api.dto.UsuarioResponseDTO;
 import com.centraldocorte.api.dto.UsuarioUpdateDTO;
 import com.centraldocorte.api.services.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,16 +25,36 @@ import java.util.Map;
 @RestController
 @RequestMapping("/usuarios")
 @RequiredArgsConstructor
-@SecurityRequirement(name="bearerAuth")
+@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Usuários", description = "Gerenciamento de usuários do sistema")
 public class UsuarioController {
     private final UsuarioService usuarioService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN')")
-    @Operation(summary = "Listar todos os usuários ativos")
-    public ResponseEntity<List<UsuarioResponseDTO>> listarTodosUsuarios(){
-        return ResponseEntity.ok(usuarioService.listarTodosAtivos());
+    @Operation(summary = "Listar todos os usuários (paginado)",
+            description = "Retorna uma página de usuários com suporte a filtros")
+    public ResponseEntity<Page<UsuarioResponseDTO>> listarTodosUsuarios(
+        @RequestParam(required = false) Boolean ativo,
+        @RequestParam(required = false) UsuarioRole role,
+        @RequestParam(required = false) String search,
+        @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
+
+        Page<UsuarioResponseDTO> page;
+
+        if (search != null && !search.trim().isEmpty()) {
+            page = usuarioService.buscarPorNome(search, pageable);
+        } else if (role != null && ativo != null) {
+            page = usuarioService.listarPorRoleEStatus(role, ativo, pageable);
+        } else if (role != null) {
+            page = usuarioService.buscarPorRole(role, pageable);
+        } else if (ativo != null) {
+            page = usuarioService.listarPorStatus(ativo, pageable);
+        } else {
+            page = usuarioService.listarTodos(pageable);
+        }
+
+        return ResponseEntity.ok(page);
     }
 
     @GetMapping("/{id}")
@@ -42,15 +67,15 @@ public class UsuarioController {
     @GetMapping("/role/{role}")
     @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
     @Operation(summary = "Listar usuários por role")
-    public ResponseEntity<List<UsuarioResponseDTO>> listarUsuarioPorRole(@PathVariable UsuarioRole role) {
-        return ResponseEntity.ok(usuarioService.buscarPorRole(role));
+    public ResponseEntity<Page<UsuarioResponseDTO>> listarUsuarioPorRole(@PathVariable UsuarioRole role, Pageable pageable) {
+        return ResponseEntity.ok(usuarioService.buscarPorRole(role, pageable));
     }
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
     @Operation(summary = "Buscar usuários por nome")
-    public ResponseEntity<List<UsuarioResponseDTO>> buscarUsuarioPorName(@RequestParam String name) {
-        return ResponseEntity.ok(usuarioService.buscarPorNome(name));
+    public ResponseEntity<Page<UsuarioResponseDTO>> buscarUsuarioPorName(@RequestParam String name, Pageable pageable) {
+        return ResponseEntity.ok(usuarioService.buscarPorNome(name, pageable));
     }
 
     @PutMapping("/{id}")
@@ -75,7 +100,7 @@ public class UsuarioController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Desativar usuário (soft delete)")
+    @Operation(summary = "Excluir usuário (soft delete)")
     public ResponseEntity<Void> desativarUsuario(@PathVariable String id) {
         usuarioService.desativarUsuario(id);
         return ResponseEntity.noContent().build();

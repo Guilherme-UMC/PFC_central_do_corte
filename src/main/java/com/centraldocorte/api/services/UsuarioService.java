@@ -3,7 +3,6 @@ package com.centraldocorte.api.services;
 import com.centraldocorte.api.domain.models.Usuario;
 import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.domain.repositories.UsuarioRepository;
-import com.centraldocorte.api.domain.repositories.FuncionarioBarbeariaRepository;
 import com.centraldocorte.api.dto.UsuarioResponseDTO;
 import com.centraldocorte.api.dto.UsuarioRequestDTO;
 import com.centraldocorte.api.dto.UsuarioUpdateDTO;
@@ -11,25 +10,28 @@ import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.exception.EmailAlreadyExistsException;
 import com.centraldocorte.api.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final FuncionarioBarbeariaRepository funcionarioBarbeariaRepository;
+    private final InativacaoService inativacaoService;
 
     @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> listarTodosAtivos() {
-        return usuarioRepository.findAllByActiveTrue()
-                .stream()
-                .map(this::converterParaResponseDTO)
-                .toList();
+    public Page<UsuarioResponseDTO> listarTodos(Pageable pageable) {
+        return usuarioRepository.findAll(pageable)
+                .map(this::converterParaResponseDTO);
     }
 
     @Transactional(readOnly = true)
@@ -47,20 +49,27 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> buscarPorRole(UsuarioRole role) {
-        return usuarioRepository.findByRoleAndActiveTrue(role)
-                .stream()
-                .map(this::converterParaResponseDTO)
-                .toList();
+    public Page<UsuarioResponseDTO> buscarPorRole(UsuarioRole role, Pageable pageable) {
+        return usuarioRepository.findByRole(role, pageable)
+                .map(this::converterParaResponseDTO);
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> buscarPorNome(String nome) {
-        return usuarioRepository.findByNameContainingIgnoreCase(nome)
-                .stream()
-                .filter(Usuario::isActive)
-                .map(this::converterParaResponseDTO)
-                .toList();
+    public Page<UsuarioResponseDTO> buscarPorNome(String nome, Pageable pageable) {
+        return usuarioRepository.findByNameContainingIgnoreCase(nome, pageable)
+                .map(this::converterParaResponseDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UsuarioResponseDTO> listarPorRoleEStatus(UsuarioRole role, boolean active, Pageable pageable) {
+        return usuarioRepository.findByRoleAndActive(role, active, pageable)
+                .map(this::converterParaResponseDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UsuarioResponseDTO> listarPorStatus(boolean active, Pageable pageable) {
+        return usuarioRepository.findByActive(active, pageable)
+                .map(this::converterParaResponseDTO);
     }
 
     @Transactional(readOnly = true)
@@ -124,19 +133,55 @@ public class UsuarioService {
 
     @Transactional
     public void desativarUsuario(String id) {
-        if (!usuarioRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Usuário não encontrado: " + id);
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+
+        if (usuario.isActive()) {
+            throw new BusinessException(
+                    "Não é possível remover um usuário ativo. " +
+                            "Primeiro inative o usuário usando a opção 'Inativar' e depois tente novamente."
+            );
         }
-        usuarioRepository.deleteById(id);
+
+        if (usuario.getRole() == UsuarioRole.ROLE_ADMIN) {
+            long totalAdminsAtivos = usuarioRepository.countByRoleAndActiveTrue(UsuarioRole.ROLE_ADMIN);
+            if (totalAdminsAtivos <= 1) {
+                throw new BusinessException("Não é possível remover o único administrador do sistema");
+            }
+        }
+
+        usuario.setName("Usuário Removido");
+        usuario.setEmail("removido_"+ UUID.randomUUID() + "@removido.com");
+        usuario.setTelefone(null);
+
+        usuarioRepository.save(usuario);
+        log.info("Usuário {} foi removido permanentemente", usuario.getEmail());
     }
 
     @Transactional
     public void alternarStatusDoUsuario(String id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+
+        if (usuario.getEmail() != null && usuario.getEmail().startsWith("removido_")) {
+            throw new BusinessException("Este usuário foi removido permanentemente e não pode ser reativado");
+        }
+
+        if (usuario.getRole() == UsuarioRole.ROLE_ADMIN) {
+            long totalAdminsAtivos = usuarioRepository.countByRoleAndActiveTrue(UsuarioRole.ROLE_ADMIN);
+            if (totalAdminsAtivos <= 1) {
+                throw new BusinessException("Não é possível inativar o único administrador do sistema");
+            }
+        }
+
+        if (usuario.isActive()) {
+            inativacaoService.processarInativacao(usuario);
+        }
 
         usuario.setActive(!usuario.isActive());
         usuarioRepository.save(usuario);
+
+        log.info("Status do usuário {} alterado para: {}", usuario.getEmail(), usuario.isActive());
     }
 
     @Transactional

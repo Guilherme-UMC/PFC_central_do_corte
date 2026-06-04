@@ -33,8 +33,6 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.dataHora = :dataHora AND a.status <> 'CANCELADO_PELO_CLIENTE' AND a.status <> 'CANCELADO_PELA_BARBEARIA'")
     long countAgendamentosConfirmadosNoHorario(@Param("barbeariaId") String barbeariaId, @Param("dataHora") LocalDateTime dataHora);
 
-    // ===== MÉTODOS PARA FUNCIONÁRIO =====
-
     // Buscar agendamentos de um funcionário em um período
     List<Agendamento> findByFuncionarioIdAndDataHoraBetween(String funcionarioId, LocalDateTime inicio, LocalDateTime fim);
 
@@ -52,7 +50,6 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     List<Agendamento> findFutureAgendamentosByFuncionarioId(@Param("funcionarioId") String funcionarioId,
                                                             @Param("agora") LocalDateTime agora);
 
-   // Atualiza o funcionário de um agendamento (para transferência)
     @Modifying
     @Query("UPDATE Agendamento a SET a.funcionario.id = :novoFuncionarioId, " +
             "a.observacao = CONCAT(a.observacao, :observacaoTransferencia) " +
@@ -65,4 +62,20 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
 
     @Query("SELECT a FROM Agendamento a WHERE a.funcionario.id = :funcionarioId AND DATE(a.dataHora) = CURRENT_DATE ORDER BY a.dataHora")
     List<Agendamento> findAgendamentosDoDiaByFuncionarioId(@Param("funcionarioId") String funcionarioId);
+
+    @Query("SELECT a FROM Agendamento a WHERE a.cliente.id = :clienteId " +
+            "AND a.dataHora > :agora " +
+            "AND a.status NOT IN :statusesIgnorados")
+    List<Agendamento> findByClienteIdAndDataHoraAfterAndStatusNotIn(
+            @Param("clienteId") String clienteId,
+            @Param("agora") LocalDateTime agora,
+            @Param("statusesIgnorados") List<StatusAgendamento> statusesIgnorados);
+
+    @Query("SELECT a FROM Agendamento a WHERE a.barbearia.id = :barbeariaId " +
+            "AND a.dataHora > :agora " +
+            "AND a.status NOT IN :statusesIgnorados")
+    List<Agendamento> findByBarbeariaIdAndDataHoraAfterAndStatusNotIn(
+            @Param("barbeariaId") String barbeariaId,
+            @Param("agora") LocalDateTime agora,
+            @Param("statusesIgnorados") List<StatusAgendamento> statusesIgnorados);
 }

@@ -137,32 +137,6 @@ public class FuncionarioController {
         }
     }
 
-    @DeleteMapping("/barbearia/{barbeariaId}/desativar/{funcionarioId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
-    @Operation(summary = "Desativar funcionário (soft delete - bloqueia acesso)")
-    public ResponseEntity<Void> desativarFuncionario(
-            @Parameter(description = "ID da barbearia", required = true)
-            @PathVariable String barbeariaId,
-            @Parameter(description = "ID do funcionário", required = true)
-            @PathVariable String funcionarioId) {
-
-        funcionarioService.desativarFuncionario(barbeariaId, funcionarioId);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/barbearia/{barbeariaId}/reativar/{funcionarioId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Reativar funcionário desativado")
-    public ResponseEntity<Void> reativarFuncionario(
-            @Parameter(description = "ID da barbearia", required = true)
-            @PathVariable String barbeariaId,
-            @Parameter(description = "ID do funcionário", required = true)
-            @PathVariable String funcionarioId) {
-
-        funcionarioService.reativarFuncionario(barbeariaId, funcionarioId);
-        return ResponseEntity.ok().build();
-    }
-
     @PatchMapping("/barbearia/{barbeariaId}/{funcionarioId}/disponibilidade")
     @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM')")
     @Operation(summary = "Alternar disponibilidade temporária (férias/folgas)")

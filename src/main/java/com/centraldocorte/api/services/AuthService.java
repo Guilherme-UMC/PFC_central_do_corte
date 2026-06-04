@@ -33,10 +33,12 @@ public class AuthService {
             Authentication autenticacao = authenticationManager.authenticate(credenciais);
 
             Usuario usuario = (Usuario) autenticacao.getPrincipal();
-            String token = tokenService.gerarToken(usuario);
+            String accessToken = tokenService.gerarAccessToken(usuario);
+            String refreshToken = tokenService.gerarRefreshToken(usuario);
 
             return new LoginResponseDTO(
-                    token,
+                    accessToken,
+                    refreshToken,
                     usuario.getId(),
                     usuario.getName(),
                     usuario.getRole().name(),
@@ -63,19 +65,23 @@ public class AuthService {
         );
     }
 
-    public LoginResponseDTO renovarToken(String tokenAntigo) {
-        String email = tokenService.validarToken(tokenAntigo);
+    public LoginResponseDTO renovarToken(String refreshToken) {
+        String email = tokenService.validarRefreshToken(refreshToken);
         if (email == null) {
-            throw new BusinessException("Token inválido ou expirado");
+            throw new BusinessException("Refresh token inválido ou expirado");
         }
 
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        if (!usuario.isActive()) {
+            throw new BusinessException("Usuário inativo");
+        }
 
-        String novoToken = tokenService.gerarToken(usuario);
+        String novoAccessToken = tokenService.gerarAccessToken(usuario);
 
         return new LoginResponseDTO(
-                novoToken,
+                novoAccessToken,
+                refreshToken,
                 usuario.getId(),
                 usuario.getName(),
                 usuario.getRole().name(),

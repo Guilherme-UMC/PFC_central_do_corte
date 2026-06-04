@@ -17,16 +17,80 @@ import java.util.function.Function;
 @Service
 public class TokenService {
 
-    private static final long DURACAO_TOKEN_EM_MS = 1000L * 60 * 60 * 2; // 2 hrs
+    private static final long DURACAO_ACCESS_TOKEN_EM_MS = 1000L * 60 * 30; // 30 minutos
+    private static final long DURACAO_REFRESH_TOKEN_EM_MS = 1000L * 60 * 60 * 24 * 7; // 7 dias
 
     @Value("${api.security.token.secret}")
     private String segredo;
 
-    public String gerarToken(Usuario usuario) {
+    public String gerarAccessToken(Usuario usuario) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", usuario.getId());
         claims.put("role", usuario.getRole().name());
-        return criarToken(claims, usuario.getEmail());
+        claims.put("type", "access");
+        return criarToken(claims, usuario.getEmail(), DURACAO_ACCESS_TOKEN_EM_MS);
+    }
+
+    public String gerarRefreshToken(Usuario usuario){
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", usuario.getId());
+        claims.put("type", "refresh");
+        return criarToken(claims, usuario.getEmail(), DURACAO_REFRESH_TOKEN_EM_MS);
+    }
+
+    private String criarToken(Map<String, Object> claims, String subject, long duracao) {
+        Date agora = new Date(System.currentTimeMillis());
+        Date expiracao = new Date(System.currentTimeMillis() + duracao);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(agora)
+                .setExpiration(expiracao)
+                .signWith(obterChaveDeAssinatura(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String validarAccessToken(String token) {
+        try {
+            Claims claims = extrairTodosClaims(token);
+            String tipo = claims.get("type", String.class);
+
+            if (!"access".equals(tipo)) {
+                return null;
+            }
+
+            String email = claims.getSubject();
+            if (tokenEstaExpirado(token)) {
+                return null;
+            }
+            return email;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public String validarRefreshToken(String token) {
+        try {
+            Claims claims = extrairTodosClaims(token);
+            String tipo = claims.get("type", String.class);
+
+            if (!"refresh".equals(tipo)) {
+                return null;
+            }
+
+            String email = claims.getSubject();
+            if (tokenEstaExpirado(token)) {
+                return null;
+            }
+            return email;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public String extrairUsuarioId(String token) {
+        return extrairClaim(token, claims -> claims.get("userId", String.class));
     }
 
     public String validarToken(String token) {
@@ -49,26 +113,9 @@ public class TokenService {
         return extrairClaim(token, claims -> claims.get("role", String.class));
     }
 
-    public String extrairUsuarioId(String token) {
-        return extrairClaim(token, claims -> claims.get("userId", String.class));
-    }
-
     public <T> T extrairClaim(String token, Function<Claims, T> resolverDeClaim) {
         Claims claims = extrairTodosClaims(token);
         return resolverDeClaim.apply(claims);
-    }
-
-    private String criarToken(Map<String, Object> claims, String subject) {
-        Date agora = new Date(System.currentTimeMillis());
-        Date expiracao = new Date(System.currentTimeMillis() + DURACAO_TOKEN_EM_MS);
-
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(agora)
-                .setExpiration(expiracao)
-                .signWith(obterChaveDeAssinatura(), SignatureAlgorithm.HS256)
-                .compact();
     }
 
     private Key obterChaveDeAssinatura() {

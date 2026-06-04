@@ -216,51 +216,6 @@ public class FuncionarioService {
     }
 
     @Transactional
-    public void desativarFuncionario(String barbeariaId, String funcionarioId) {
-        log.info("Desativando funcionário {} da barbearia {}", funcionarioId, barbeariaId);
-
-        validarFuncionarioExiste(funcionarioId);
-        validarBarbeariaExistente(barbeariaId);
-
-        FuncionarioBarbearia vinculo = funcionarioBarbeariaRepository
-                .findByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vínculo ativo não encontrado"));
-
-        vinculo.setAtivo(false);
-        funcionarioBarbeariaRepository.save(vinculo);
-
-        usuarioService.setActiveStatus(funcionarioId, false);
-        log.info("Funcionário desativado com sucesso");
-    }
-
-    @Transactional
-    public void reativarFuncionario(String barbeariaId, String funcionarioId) {
-        log.info("Reativando funcionário {} na barbearia {}", funcionarioId, barbeariaId);
-
-        Usuario funcionario = usuarioService.buscarUsuarioPorIdIncluindoInativos(funcionarioId);
-
-        if (!funcionario.isActive()) {
-            usuarioService.setActiveStatus(funcionarioId, true);
-            log.info("Conta do usuário reativada");
-        }
-
-        var vinculoOpt = funcionarioBarbeariaRepository
-                .findByFuncionarioIdAndBarbeariaId(funcionarioId, barbeariaId);
-
-        if (vinculoOpt.isPresent()) {
-            FuncionarioBarbearia vinculo = vinculoOpt.get();
-            if (!vinculo.getAtivo()) {
-                reativarVinculo(vinculo);
-                log.info("Vínculo reativado");
-            }
-        } else {
-            Barbearia barbearia = buscarBarbeariaPorId(barbeariaId);
-            criarVinculo(funcionario, barbearia);
-            log.info("Novo vínculo criado durante reativação");
-        }
-    }
-
-    @Transactional
     public void alternarDisponibilidadeFuncionario(String barbeariaId, String funcionarioId) {
         log.info("Alternando disponibilidade do funcionário {} na barbearia {}", funcionarioId, barbeariaId);
 

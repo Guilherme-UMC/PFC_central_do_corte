@@ -157,14 +157,14 @@ public class AgendamentoService {
         }
 
         LocalDateTime agora = LocalDateTime.now();
-        LocalDateTime limiteCancelamento = agendamento.getDataHora().minusHours(2);
+        LocalDateTime limiteCancelamento = agendamento.getDataHora().minusHours(24);
 
         if (agendamento.getDataHora().isBefore(agora)) {
             throw new BusinessException("Não é possível cancelar um agendamento que já passou");
         }
 
         if (agora.isAfter(limiteCancelamento)) {
-            throw new BusinessException("Cancelamentos devem ser feitos com pelo menos 2 horas de antecedência");
+            throw new BusinessException("Cancelamentos devem ser feitos com pelo menos 24 horas de antecedência");
         }
 
         if (isCliente) {
