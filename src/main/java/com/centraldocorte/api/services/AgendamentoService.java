@@ -207,8 +207,13 @@ public class AgendamentoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado"));
 
         Usuario usuario = getUsuarioAutenticado();
-        if (!agendamento.getBarbearia().getOwner().getId().equals(usuario.getId())) {
-            throw new UnauthorizedException("Apenas o proprietário da barbearia pode concluir agendamentos");
+
+        // Permite proprietário OU qualquer usuário com role FUNCIONARIO
+        boolean isOwner = agendamento.getBarbearia().getOwner().getId().equals(usuario.getId());
+        boolean isFuncionario = usuario.getRole() == UsuarioRole.ROLE_FUNCIONARIO;
+
+        if (!isOwner && !isFuncionario) {
+            throw new UnauthorizedException("Apenas o proprietário da barbearia ou funcionários podem concluir agendamentos");
         }
 
         if (agendamento.getStatus() != StatusAgendamento.CONFIRMADO) {

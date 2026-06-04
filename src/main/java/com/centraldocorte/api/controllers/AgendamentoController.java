@@ -40,7 +40,7 @@ public class AgendamentoController {
     }
 
     @PutMapping("/{id}/confirmar")
-    @PreAuthorize("hasRole('BARBEARIA_ADM')")
+    @PreAuthorize("hasAnyRole('BARBEARIA_ADM', 'FUNCIONARIO')")
     @Operation(summary = "Confirmar agendamento", description = "Confirma um agendamento pendente (apenas dono da barbearia)")
     public ResponseEntity<AgendamentoResponseDTO> confirmarAgendamento(@PathVariable Long id) {
         AgendamentoResponseDTO agendamento = agendamentoService.confirmarAgendamento(id);
@@ -48,8 +48,8 @@ public class AgendamentoController {
     }
 
     @PutMapping("/{id}/concluir")
-    @PreAuthorize("hasRole('BARBEARIA_ADM')")
-    @Operation(summary = "Concluir agendamento", description = "Marca um agendamento como concluído (após o serviço ser realizado)")
+    @PreAuthorize("hasAnyRole('BARBEARIA_ADM', 'FUNCIONARIO')")  // Adicione FUNCIONARIO
+    @Operation(summary = "Concluir agendamento", description = "Marca um agendamento como concluído")
     public ResponseEntity<AgendamentoResponseDTO> concluirAgendamento(@PathVariable Long id) {
         AgendamentoResponseDTO agendamento = agendamentoService.concluirAgendamento(id);
         return ResponseEntity.ok(agendamento);
