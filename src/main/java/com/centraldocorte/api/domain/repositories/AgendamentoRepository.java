@@ -7,11 +7,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
+
+    // ========== MÉTODOS EXISTENTES ==========
 
     // Buscar por barbearia
     List<Agendamento> findByBarbeariaIdOrderByDataHoraDesc(String barbeariaId);
@@ -40,7 +43,7 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.funcionario.id = :funcionarioId AND a.dataHora = :dataHora AND a.status <> 'CANCELADO_PELO_CLIENTE' AND a.status <> 'CANCELADO_PELA_BARBEARIA'")
     long countAgendamentosPorFuncionarioNoHorario(@Param("funcionarioId") String funcionarioId, @Param("dataHora") LocalDateTime dataHora);
 
-    //Busca agendamentos futuros de um funcionário (não cancelados e não concluídos)
+    // Busca agendamentos futuros de um funcionário (não cancelados e não concluídos)
     @Query("SELECT a FROM Agendamento a WHERE a.funcionario.id = :funcionarioId " +
             "AND a.dataHora > :agora " +
             "AND a.status <> 'CANCELADO_PELO_CLIENTE' " +
@@ -78,4 +81,30 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
             @Param("barbeariaId") String barbeariaId,
             @Param("agora") LocalDateTime agora,
             @Param("statusesIgnorados") List<StatusAgendamento> statusesIgnorados);
+
+    // ========== MÉTODOS PARA DASHBOARD ==========
+
+    // Contar total de agendamentos por barbearia
+    Long countByBarbeariaId(String barbeariaId);
+
+    // Contar agendamentos em um período
+    Long countByBarbeariaIdAndDataHoraBetween(String barbeariaId, LocalDateTime inicio, LocalDateTime fim);
+
+    // Contar agendamentos por status
+    Long countByBarbeariaIdAndStatus(String barbeariaId, StatusAgendamento status);
+
+    // Contar agendamentos por lista de status
+    Long countByBarbeariaIdAndStatusIn(String barbeariaId, List<StatusAgendamento> status);
+
+    // Contar clientes distintos atendidos
+    @Query("SELECT COUNT(DISTINCT a.cliente.id) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.status IN :status")
+    Long countDistinctClientesByBarbeariaIdAndStatusIn(@Param("barbeariaId") String barbeariaId, @Param("status") List<StatusAgendamento> status);
+
+    // Somar preço dos serviços de agendamentos em um período
+    @Query("SELECT COALESCE(SUM(a.servico.preco), 0) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.status IN :status AND a.dataHora BETWEEN :inicio AND :fim")
+    BigDecimal sumPrecoServicoByBarbeariaIdAndStatusInAndDataHoraBetween(
+            @Param("barbeariaId") String barbeariaId,
+            @Param("status") List<StatusAgendamento> status,
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fim") LocalDateTime fim);
 }

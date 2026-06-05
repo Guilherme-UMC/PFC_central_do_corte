@@ -77,6 +77,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/barbearia/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/servicos/barbearia/{barbeariaId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/funcionarios/barbearia/{barbeariaId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/barbearias/{id}/horarios").permitAll()
 
                         // Qualquer outra rota precisa de autenticação
                         .anyRequest().authenticated()

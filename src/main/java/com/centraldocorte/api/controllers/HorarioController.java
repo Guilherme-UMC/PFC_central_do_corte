@@ -25,6 +25,7 @@ public class HorarioController {
     private final HorarioService horarioService;
 
     @GetMapping("/{id}/horarios")
+    @PreAuthorize("permitAll()")
     @Operation(summary = "Buscar horários de funcionamento",
             description = "Retorna os horários de funcionamento de uma barbearia para todos os dias da semana")
     public ResponseEntity<List<HorarioFuncionamentoDTO>> getHorarios(@PathVariable String id) {
