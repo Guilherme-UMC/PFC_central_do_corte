@@ -59,7 +59,7 @@ public class FuncionarioController {
     }
 
     @GetMapping("/barbearia/{barbeariaId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'BARBEARIA_ADM', 'FUNCIONARIO', 'CLIENTE')")
+    @PreAuthorize("permitAll()")
     @Operation(summary = "Listar todos os funcionários vinculados a uma barbearia")
     public ResponseEntity<List<UsuarioResponseDTO>> listarFuncionariosPorBarbearia(
             @Parameter(description = "ID da barbearia", required = true)
