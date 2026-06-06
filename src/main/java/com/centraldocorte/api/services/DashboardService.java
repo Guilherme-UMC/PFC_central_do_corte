@@ -85,16 +85,12 @@ public class DashboardService {
                 barbeariaId, StatusAgendamento.CONCLUIDO
         );
 
-        // Média de avaliação (mock - você pode implementar depois)
-        Double mediaAvaliacao = 4.8; // Placeholder
-
         return DashboardMetricasDTO.builder()
                 .totalAgendamentos(totalAgendamentos)
                 .agendamentosMes(agendamentosMes)
                 .taxaConfirmacao(Math.round(taxaConfirmacao * 10) / 10.0)
                 .faturamentoMes(faturamentoMes)
                 .clientesAtendidos(clientesAtendidos)
-                .mediaAvaliacao(mediaAvaliacao)
                 .cancelamentos(cancelamentos)
                 .servicosRealizados(servicosRealizados)
                 .build();

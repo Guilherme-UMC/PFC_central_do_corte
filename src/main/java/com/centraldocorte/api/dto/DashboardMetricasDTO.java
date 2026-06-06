@@ -17,7 +17,6 @@ public class DashboardMetricasDTO {
     private Double taxaConfirmacao;
     private BigDecimal faturamentoMes;
     private Long clientesAtendidos;
-    private Double mediaAvaliacao;
     private Long cancelamentos;
     private Long servicosRealizados;
 }
