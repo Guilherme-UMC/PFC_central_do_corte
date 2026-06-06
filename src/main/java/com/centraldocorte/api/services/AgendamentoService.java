@@ -1,9 +1,6 @@
 package com.centraldocorte.api.services;
 
-import com.centraldocorte.api.domain.models.Agendamento;
-import com.centraldocorte.api.domain.models.Barbearia;
-import com.centraldocorte.api.domain.models.Servico;
-import com.centraldocorte.api.domain.models.Usuario;
+import com.centraldocorte.api.domain.models.*;
 import com.centraldocorte.api.domain.models.enums.StatusAgendamento;
 import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.domain.repositories.AgendamentoRepository;
@@ -17,6 +14,7 @@ import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.exception.ResourceNotFoundException;
 import com.centraldocorte.api.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AgendamentoService {
@@ -92,10 +91,13 @@ public class AgendamentoService {
         }
 
         Usuario funcionario = null;
+
         if (request.getFuncionarioId() != null && !request.getFuncionarioId().isEmpty()) {
+            // CASO 1: Cliente escolheu um funcionário específico
             funcionario = usuarioRepository.findById(request.getFuncionarioId())
                     .orElseThrow(() -> new ResourceNotFoundException("Funcionário não encontrado"));
 
+            // Verifica se o funcionário pertence à barbearia
             boolean pertenceABarbearia = funcionarioBarbeariaRepository
                     .existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionario.getId(), barbearia.getId());
 
@@ -103,29 +105,33 @@ public class AgendamentoService {
                 throw new BusinessException("Este funcionário não pertence à barbearia selecionada");
             }
 
+            // Verifica se o usuário é realmente um funcionário
             if (funcionario.getRole() != UsuarioRole.ROLE_FUNCIONARIO) {
                 throw new BusinessException("O usuário selecionado não é um funcionário");
             }
-        }
 
-        if (request.getDataHora().isBefore(LocalDateTime.now())) {
-            throw new BusinessException("Não é possível agendar para data/hora passada");
-        }
-
-        if (!horarioService.isBarbeariaAberta(barbearia.getId(), request.getDataHora())) {
-            throw new BusinessException("A barbearia não está aberta neste horário");
-        }
-
-        if (funcionario != null) {
+            // Verifica disponibilidade do funcionário específico
             if (!disponibilidadeService.isHorarioDisponivelParaFuncionario(funcionario.getId(), request.getDataHora())) {
                 throw new BusinessException("Este funcionário não está disponível no horário selecionado");
             }
+
         } else {
-            if (!disponibilidadeService.isHorarioDisponivel(barbearia.getId(), request.getDataHora())) {
-                throw new BusinessException("Este horário já está ocupado");
+            // CASO 2: Cliente escolheu "QUALQUER UM" - Buscar funcionário disponível automaticamente
+            funcionario = buscarFuncionarioDisponivel(
+                    barbearia.getId(),
+                    request.getDataHora(),
+                    servico.getDuracaoMinutos()
+            );
+
+            if (funcionario == null) {
+                throw new BusinessException("Nenhum funcionário disponível para este horário. Tente outro horário.");
             }
+
+            log.info("Funcionário {} atribuído automaticamente para agendamento do cliente {}",
+                    funcionario.getName(), cliente.getEmail());
         }
 
+        // Criar o agendamento
         Agendamento agendamento = new Agendamento();
         agendamento.setBarbearia(barbearia);
         agendamento.setCliente(cliente);
@@ -136,7 +142,49 @@ public class AgendamentoService {
         agendamento.setObservacao(request.getObservacao());
 
         Agendamento saved = agendamentoRepository.save(agendamento);
+
+        log.info("Agendamento criado com sucesso! ID: {}, Funcionário: {}, Cliente: {}",
+                saved.getId(), funcionario.getName(), cliente.getName());
+
         return convertToResponseDTO(saved);
+    }
+
+    private Usuario buscarFuncionarioDisponivel(String barbeariaId, LocalDateTime dataHora, Integer duracaoMinutos) {
+        // Usa o método existente findByBarbeariaIdAndAtivoTrue
+        List<FuncionarioBarbearia> funcionariosVinculados = funcionarioBarbeariaRepository
+                .findByBarbeariaIdAndAtivoTrue(barbeariaId);
+
+        if (funcionariosVinculados.isEmpty()) {
+            log.warn("Nenhum funcionário vinculado à barbearia: {}", barbeariaId);
+            return null;
+        }
+
+        int duracao = (duracaoMinutos != null && duracaoMinutos > 0) ? duracaoMinutos : 30;
+        LocalDateTime fimExpediente = dataHora.plusMinutes(duracao);
+
+        for (FuncionarioBarbearia vinculo : funcionariosVinculados) {
+            Usuario funcionario = vinculo.getFuncionario();
+
+            // Verifica se o funcionário está ativo no sistema
+            if (!funcionario.isActive()) {
+                log.debug("Funcionário {} está inativo no sistema, ignorando", funcionario.getId());
+                continue;
+            }
+
+            // Verifica se o funcionário tem conflito de horário
+            boolean temConflito = agendamentoRepository
+                    .existsByFuncionarioIdAndDataHoraBetween(funcionario.getId(), dataHora, fimExpediente);
+
+            if (!temConflito) {
+                log.info("Funcionário disponível encontrado: {} (ID: {})", funcionario.getName(), funcionario.getId());
+                return funcionario;
+            } else {
+                log.debug("Funcionário {} tem conflito de horário, tentando próximo", funcionario.getId());
+            }
+        }
+
+        log.warn("Nenhum funcionário disponível encontrado para barbearia {} no horário {}", barbeariaId, dataHora);
+        return null;
     }
 
     @Transactional

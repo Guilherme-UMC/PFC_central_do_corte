@@ -36,4 +36,12 @@ public interface FuncionarioBarbeariaRepository extends JpaRepository<Funcionari
     boolean existsByFuncionarioIdAndBarbeariaIdAndAtivoTrueAndDisponivelTrue(
             String funcionarioId, String barbeariaId);
 
+    @Query("SELECT fb FROM FuncionarioBarbearia fb " +
+            "JOIN fb.funcionario f " +
+            "WHERE fb.barbearia.id = :barbeariaId " +
+            "AND fb.ativo = true " +
+            "AND fb.disponivel = true " +
+            "AND f.active = true")
+    List<FuncionarioBarbearia> findFuncionariosDisponiveisParaAgendamento(@Param("barbeariaId") String barbeariaId);
+
 }
