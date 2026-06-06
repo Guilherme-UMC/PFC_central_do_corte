@@ -74,6 +74,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/barbearia/buscar-por-cep/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/barbearia/buscar-cep/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/produtos/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/barbearia/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/servicos/barbearia/{barbeariaId}").permitAll()

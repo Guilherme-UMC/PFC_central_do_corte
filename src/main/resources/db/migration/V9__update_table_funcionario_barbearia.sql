@@ -1,4 +1,3 @@
--- Adicionar coluna de disponibilidade temporária e atualizado_em
 ALTER TABLE funcionarios_barbearia
     ADD COLUMN disponivel BOOLEAN DEFAULT TRUE,
 ADD COLUMN atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP;

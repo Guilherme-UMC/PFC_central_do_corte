@@ -14,8 +14,6 @@ import java.util.List;
 @Repository
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
 
-    // ========== MÉTODOS EXISTENTES ==========
-
     // Buscar por barbearia
     List<Agendamento> findByBarbeariaIdOrderByDataHoraDesc(String barbeariaId);
 
@@ -107,4 +105,6 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
             @Param("status") List<StatusAgendamento> status,
             @Param("inicio") LocalDateTime inicio,
             @Param("fim") LocalDateTime fim);
+
+    boolean existsByFuncionarioIdAndDataHoraBetween(String funcionarioId, LocalDateTime inicio, LocalDateTime fim);
 }
