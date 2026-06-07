@@ -13,6 +13,7 @@ import com.centraldocorte.api.dto.AgendamentoResponseDTO;
 import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.exception.ResourceNotFoundException;
 import com.centraldocorte.api.exception.UnauthorizedException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,6 +39,7 @@ public class AgendamentoService {
     private final FuncionarioBarbeariaRepository funcionarioBarbeariaRepository;
     private final HorarioService horarioService;
     private final DisponibilidadeService disponibilidadeService;
+    private final LogSistemaService logSistemaService;  // ADICIONADO
 
     private Usuario getUsuarioAutenticado() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -69,7 +73,7 @@ public class AgendamentoService {
     }
 
     @Transactional
-    public AgendamentoResponseDTO criarAgendamento(AgendamentoRequestDTO request) {
+    public AgendamentoResponseDTO criarAgendamento(AgendamentoRequestDTO request, HttpServletRequest httpRequest) {
 
         Usuario cliente = getUsuarioAutenticado();
         if (cliente.getRole() != UsuarioRole.ROLE_CLIENTE) {
@@ -146,6 +150,26 @@ public class AgendamentoService {
         log.info("Agendamento criado com sucesso! ID: {}, Funcionário: {}, Cliente: {}",
                 saved.getId(), funcionario.getName(), cliente.getName());
 
+        // Registrar log
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("barbeariaId", barbearia.getId());
+        detalhes.put("barbeariaNome", barbearia.getNome());
+        detalhes.put("servicoId", servico.getId());
+        detalhes.put("servicoNome", servico.getNome());
+        detalhes.put("funcionarioId", funcionario.getId());
+        detalhes.put("funcionarioNome", funcionario.getName());
+        detalhes.put("dataHora", request.getDataHora());
+
+        logSistemaService.registrarLog(
+                "AGENDAMENTO",
+                "CRIADO",
+                "Agendamento",
+                saved.getId().toString(),
+                String.format("Cliente %s criou agendamento para %s", cliente.getName(), barbearia.getNome()),
+                detalhes,
+                httpRequest
+        );
+
         return convertToResponseDTO(saved);
     }
 
@@ -187,7 +211,7 @@ public class AgendamentoService {
     }
 
     @Transactional
-    public AgendamentoResponseDTO cancelarAgendamento(Long agendamentoId, String motivo) {
+    public AgendamentoResponseDTO cancelarAgendamento(Long agendamentoId, String motivo, HttpServletRequest httpRequest) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado"));
 
@@ -214,6 +238,8 @@ public class AgendamentoService {
             throw new BusinessException("Cancelamentos devem ser feitos com pelo menos 24 horas de antecedência");
         }
 
+        String statusAnterior = agendamento.getStatus().name();
+
         if (isCliente) {
             agendamento.setStatus(StatusAgendamento.CANCELADO_PELO_CLIENTE);
         } else {
@@ -224,11 +250,30 @@ public class AgendamentoService {
                 isCliente ? "cliente" : "barbearia", motivo));
 
         Agendamento updated = agendamentoRepository.save(agendamento);
+
+        // Registrar log de cancelamento
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("agendamentoId", agendamentoId);
+        detalhes.put("motivo", motivo);
+        detalhes.put("statusAnterior", statusAnterior);
+        detalhes.put("statusNovo", agendamento.getStatus().name());
+        detalhes.put("canceladoPor", isCliente ? "cliente" : "barbearia");
+
+        logSistemaService.registrarLog(
+                "AGENDAMENTO",
+                "CANCELADO",
+                "Agendamento",
+                agendamentoId.toString(),
+                String.format("Agendamento %d foi cancelado por %s. Motivo: %s", agendamentoId, isCliente ? "cliente" : "barbearia", motivo),
+                detalhes,
+                httpRequest
+        );
+
         return convertToResponseDTO(updated);
     }
 
     @Transactional
-    public AgendamentoResponseDTO confirmarAgendamento(Long agendamentoId) {
+    public AgendamentoResponseDTO confirmarAgendamento(Long agendamentoId, HttpServletRequest httpRequest) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado"));
 
@@ -244,12 +289,28 @@ public class AgendamentoService {
         agendamento.setStatus(StatusAgendamento.CONFIRMADO);
         Agendamento updated = agendamentoRepository.save(agendamento);
 
+        // Registrar log de confirmação
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("agendamentoId", agendamentoId);
+        detalhes.put("clienteNome", agendamento.getCliente().getName());
+        detalhes.put("barbeariaNome", agendamento.getBarbearia().getNome());
+
+        logSistemaService.registrarLog(
+                "AGENDAMENTO",
+                "CONFIRMADO",
+                "Agendamento",
+                agendamentoId.toString(),
+                String.format("Agendamento %d foi confirmado para cliente %s", agendamentoId, agendamento.getCliente().getName()),
+                detalhes,
+                httpRequest
+        );
+
         return convertToResponseDTO(updated);
     }
 
 
     @Transactional
-    public AgendamentoResponseDTO concluirAgendamento(Long agendamentoId) {
+    public AgendamentoResponseDTO concluirAgendamento(Long agendamentoId, HttpServletRequest httpRequest) {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado"));
 
@@ -269,6 +330,27 @@ public class AgendamentoService {
 
         agendamento.setStatus(StatusAgendamento.CONCLUIDO);
         Agendamento updated = agendamentoRepository.save(agendamento);
+
+        // Registrar log de conclusão
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("agendamentoId", agendamentoId);
+        detalhes.put("clienteNome", agendamento.getCliente().getName());
+        detalhes.put("barbeariaNome", agendamento.getBarbearia().getNome());
+        detalhes.put("servicoNome", agendamento.getServico().getNome());
+        detalhes.put("valor", agendamento.getServico().getPreco());
+
+        logSistemaService.registrarLog(
+                "AGENDAMENTO",
+                "CONCLUIDO",
+                "Agendamento",
+                agendamentoId.toString(),
+                String.format("Agendamento %d foi concluído. Cliente: %s, Serviço: %s, Valor: R$ %.2f",
+                        agendamentoId, agendamento.getCliente().getName(),
+                        agendamento.getServico().getNome(),
+                        agendamento.getServico().getPreco()),
+                detalhes,
+                httpRequest
+        );
 
         return convertToResponseDTO(updated);
     }

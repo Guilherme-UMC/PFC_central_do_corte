@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -34,8 +35,10 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
             @ApiResponse(responseCode = "422", description = "Email ou senha inválidos")
     })
-    public ResponseEntity<LoginResponseDTO> autenticarUsuario(@Valid @RequestBody LoginRequestDTO request) {
-        return ResponseEntity.ok(authService.autenticarUsuario(request));
+    public ResponseEntity<LoginResponseDTO> autenticarUsuario(
+            @Valid @RequestBody LoginRequestDTO request,
+            HttpServletRequest httpRequest) {  // ADICIONADO
+        return ResponseEntity.ok(authService.autenticarUsuario(request, httpRequest));
     }
 
     @PostMapping("/register")
@@ -45,8 +48,10 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = RegisterResponseDTO.class))),
             @ApiResponse(responseCode = "422", description = "Email já cadastrado ou dados inválidos")
     })
-    public ResponseEntity<RegisterResponseDTO> registrarCliente(@Valid @RequestBody RegisterRequestDTO request) {
-        return ResponseEntity.ok(authService.registrarUsuario(request, UsuarioRole.ROLE_CLIENTE));
+    public ResponseEntity<RegisterResponseDTO> registrarCliente(
+            @Valid @RequestBody RegisterRequestDTO request,
+            HttpServletRequest httpRequest) {  // ADICIONADO
+        return ResponseEntity.ok(authService.registrarUsuario(request, UsuarioRole.ROLE_CLIENTE, httpRequest));
     }
 
     @PostMapping("/register/barbearia")
@@ -58,9 +63,9 @@ public class AuthController {
             @ApiResponse(responseCode = "422", description = "Email já cadastrado ou dados inválidos")
     })
     public ResponseEntity<RegisterResponseDTO> registrarProprietarioDeBarbearia(
-            @Valid @RequestBody RegisterRequestDTO request) {
-
-        return ResponseEntity.ok(authService.registrarUsuario(request, UsuarioRole.ROLE_BARBEARIA_ADM));
+            @Valid @RequestBody RegisterRequestDTO request,
+            HttpServletRequest httpRequest) {  // ADICIONADO
+        return ResponseEntity.ok(authService.registrarUsuario(request, UsuarioRole.ROLE_BARBEARIA_ADM, httpRequest));
     }
 
     @PostMapping("/refresh-token")
@@ -70,10 +75,18 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Token renovado com sucesso"),
             @ApiResponse(responseCode = "401", description = "Token inválido ou expirado")
     })
-
-
     public ResponseEntity<LoginResponseDTO> renovarToken(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(TAMANHO_PREFIXO_BEARER);
         return ResponseEntity.ok(authService.renovarToken(token));
+    }
+
+    // Endpoint para registrar logout (opcional)
+    @PostMapping("/logout")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Logout", description = "Registra o logout do usuário")
+    public ResponseEntity<Void> logout(HttpServletRequest httpRequest) {
+        // O service vai pegar o usuário autenticado pelo SecurityContext
+        authService.registrarLogout(httpRequest);
+        return ResponseEntity.ok().build();
     }
 }

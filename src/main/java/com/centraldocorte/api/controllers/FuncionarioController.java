@@ -10,16 +10,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,9 +41,10 @@ public class FuncionarioController {
     public ResponseEntity<UsuarioResponseDTO> criarFuncionario(
             @Parameter(description = "ID da barbearia", required = true)
             @PathVariable String barbeariaId,
-            @Valid @RequestBody RegisterRequestDTO request) {
+            @Valid @RequestBody RegisterRequestDTO request,
+            HttpServletRequest httpRequest) {
 
-        UsuarioResponseDTO response = funcionarioService.criarFuncionario(barbeariaId, request);
+        UsuarioResponseDTO response = funcionarioService.criarFuncionario(barbeariaId, request, httpRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -52,9 +54,10 @@ public class FuncionarioController {
     public ResponseEntity<Void> vincularFuncionarioExistente(
             @Parameter(description = "ID da barbearia", required = true)
             @PathVariable String barbeariaId,
-            @Valid @RequestBody FuncionarioVinculoDTO dto) {
+            @Valid @RequestBody FuncionarioVinculoDTO dto,
+            HttpServletRequest httpRequest) {
 
-        funcionarioService.vincularFuncionarioExistente(barbeariaId, dto);
+        funcionarioService.vincularFuncionarioExistente(barbeariaId, dto, httpRequest);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -104,9 +107,10 @@ public class FuncionarioController {
     @Operation(summary = "Atualizar dados do funcionário")
     public ResponseEntity<UsuarioResponseDTO> atualizarFuncionario(
             @PathVariable String funcionarioId,
-            @Valid @RequestBody UsuarioUpdateDTO request) {
+            @Valid @RequestBody UsuarioUpdateDTO request,
+            HttpServletRequest httpRequest) {
 
-        return ResponseEntity.ok(usuarioService.atualizarUsuario(funcionarioId, request));
+        return ResponseEntity.ok(usuarioService.atualizarUsuario(funcionarioId, request, httpRequest));
     }
 
     @DeleteMapping("/barbearia/{barbeariaId}/desvincular/{funcionarioId}")
@@ -116,10 +120,11 @@ public class FuncionarioController {
             @Parameter(description = "ID da barbearia", required = true)
             @PathVariable String barbeariaId,
             @Parameter(description = "ID do funcionário", required = true)
-            @PathVariable String funcionarioId) {
+            @PathVariable String funcionarioId,
+            HttpServletRequest httpRequest) {
 
         try {
-            funcionarioService.desvincularFuncionario(barbeariaId, funcionarioId);
+            funcionarioService.desvincularFuncionario(barbeariaId, funcionarioId, httpRequest);
 
             Map<String, String> response = new HashMap<>();
             response.put("message", "Funcionário desvinculado com sucesso");
@@ -144,9 +149,10 @@ public class FuncionarioController {
             @Parameter(description = "ID da barbearia", required = true)
             @PathVariable String barbeariaId,
             @Parameter(description = "ID do funcionário", required = true)
-            @PathVariable String funcionarioId) {
+            @PathVariable String funcionarioId,
+            HttpServletRequest httpRequest) {
 
-        funcionarioService.alternarDisponibilidadeFuncionario(barbeariaId, funcionarioId);
+        funcionarioService.alternarDisponibilidadeFuncionario(barbeariaId, funcionarioId, httpRequest);
         return ResponseEntity.noContent().build();
     }
 
@@ -158,10 +164,14 @@ public class FuncionarioController {
             @RequestParam String funcionarioId,
             @RequestParam String dataHora) {
 
-        boolean disponivel = funcionarioService.verificarDisponibilidadeDoFuncionario(
-                barbeariaId, funcionarioId, LocalDateTime.parse(dataHora));
-
-        return ResponseEntity.ok(disponivel);
+        try {
+            LocalDateTime dataHoraParsed = LocalDateTime.parse(dataHora);
+            boolean disponivel = funcionarioService.verificarDisponibilidadeDoFuncionario(
+                    barbeariaId, funcionarioId, dataHoraParsed);
+            return ResponseEntity.ok(disponivel);
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().body(false);
+        }
     }
 
     @GetMapping("/barbearias")
@@ -169,9 +179,7 @@ public class FuncionarioController {
     @Operation(summary = "Listar barbearias onde o funcionário está vinculado")
     public ResponseEntity<List<BarbeariaResponseDTO>> listarBarbeariasDoFuncionario(Authentication authentication) {
         String email = authentication.getName();
-
         Usuario funcionario = usuarioService.buscarPorEmail(email);
-
         List<BarbeariaResponseDTO> barbearias = funcionarioService.listarBarbeariasPorFuncionario(funcionario.getId());
         return ResponseEntity.ok(barbearias);
     }

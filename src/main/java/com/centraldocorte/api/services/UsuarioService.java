@@ -9,6 +9,7 @@ import com.centraldocorte.api.dto.UsuarioUpdateDTO;
 import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.exception.EmailAlreadyExistsException;
 import com.centraldocorte.api.exception.ResourceNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -17,7 +18,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -27,6 +30,7 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final InativacaoService inativacaoService;
+    private final LogSistemaService logSistemaService;
 
     @Transactional(readOnly = true)
     public Page<UsuarioResponseDTO> listarTodos(Pageable pageable) {
@@ -106,20 +110,38 @@ public class UsuarioService {
     }
 
     @Transactional
-    public UsuarioResponseDTO criarUsuario(UsuarioRequestDTO request) {
+    public UsuarioResponseDTO criarUsuario(UsuarioRequestDTO request, HttpServletRequest httpRequest) {
         validarEmailDisponivel(request.getEmail());
 
         Usuario novoUsuario = montarUsuarioAPartirDoRequest(request);
         usuarioRepository.save(novoUsuario);
 
+        // Registrar log de criação de usuário
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("email", novoUsuario.getEmail());
+        detalhes.put("role", novoUsuario.getRole().name());
+        detalhes.put("telefone", novoUsuario.getTelefone());
+
+        logSistemaService.registrarLog(
+                "USUARIO",
+                "CRIADO",
+                "Usuario",
+                novoUsuario.getId(),
+                String.format("Usuário %s foi criado com role %s", novoUsuario.getEmail(), novoUsuario.getRole().name()),
+                detalhes,
+                httpRequest
+        );
+
         return converterParaResponseDTO(novoUsuario);
     }
 
     @Transactional
-    public UsuarioResponseDTO atualizarUsuario(String id, UsuarioUpdateDTO request) {
+    public UsuarioResponseDTO atualizarUsuario(String id, UsuarioUpdateDTO request, HttpServletRequest httpRequest) {
         Usuario usuario = usuarioRepository.findById(id)
                 .filter(Usuario::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
+
+        String emailAntigo = usuario.getEmail();
 
         if (request.getEmail() != null && !request.getEmail().equals(usuario.getEmail())) {
             validarEmailDisponivel(request.getEmail());
@@ -128,11 +150,27 @@ public class UsuarioService {
         atualizarCamposDoUsuario(usuario, request);
         usuario = usuarioRepository.save(usuario);
 
+        // Registrar log de atualização
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("id", id);
+        detalhes.put("emailAntigo", emailAntigo);
+        detalhes.put("emailNovo", usuario.getEmail());
+
+        logSistemaService.registrarLog(
+                "USUARIO",
+                "ATUALIZADO",
+                "Usuario",
+                id,
+                String.format("Usuário %s foi atualizado", usuario.getEmail()),
+                detalhes,
+                httpRequest
+        );
+
         return converterParaResponseDTO(usuario);
     }
 
     @Transactional
-    public void desativarUsuario(String id) {
+    public void desativarUsuario(String id, HttpServletRequest httpRequest) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
@@ -150,16 +188,32 @@ public class UsuarioService {
             }
         }
 
+        String emailRemovido = usuario.getEmail();
         usuario.setName("Usuário Removido");
         usuario.setEmail("removido_"+ UUID.randomUUID() + "@removido.com");
         usuario.setTelefone(null);
 
         usuarioRepository.save(usuario);
-        log.info("Usuário {} foi removido permanentemente", usuario.getEmail());
+        log.info("Usuário {} foi removido permanentemente", emailRemovido);
+
+        // Registrar log de remoção
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("id", id);
+        detalhes.put("emailRemovido", emailRemovido);
+
+        logSistemaService.registrarLog(
+                "USUARIO",
+                "DELETADO",
+                "Usuario",
+                id,
+                String.format("Usuário %s foi removido permanentemente", emailRemovido),
+                detalhes,
+                httpRequest
+        );
     }
 
     @Transactional
-    public void alternarStatusDoUsuario(String id) {
+    public void alternarStatusDoUsuario(String id, HttpServletRequest httpRequest) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
@@ -174,6 +228,9 @@ public class UsuarioService {
             }
         }
 
+        String statusAntigo = usuario.isActive() ? "ATIVO" : "INATIVO";
+        String statusNovo = !usuario.isActive() ? "ATIVO" : "INATIVO";
+
         if (usuario.isActive()) {
             inativacaoService.processarInativacao(usuario);
         }
@@ -182,10 +239,27 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
 
         log.info("Status do usuário {} alterado para: {}", usuario.getEmail(), usuario.isActive());
+
+        // Registrar log de alteração de status
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("id", id);
+        detalhes.put("email", usuario.getEmail());
+        detalhes.put("statusAntigo", statusAntigo);
+        detalhes.put("statusNovo", statusNovo);
+
+        logSistemaService.registrarLog(
+                "USUARIO",
+                "STATUS_ALTERADO",
+                "Usuario",
+                id,
+                String.format("Status do usuário %s alterado de %s para %s", usuario.getEmail(), statusAntigo, statusNovo),
+                detalhes,
+                httpRequest
+        );
     }
 
     @Transactional
-    public void alterarSenha(String id, String senhaAtual, String novaSenha) {
+    public void alterarSenha(String id, String senhaAtual, String novaSenha, HttpServletRequest httpRequest) {
         Usuario usuario = usuarioRepository.findById(id)
                 .filter(Usuario::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
@@ -196,15 +270,48 @@ public class UsuarioService {
 
         usuario.setPassword(passwordEncoder.encode(novaSenha));
         usuarioRepository.save(usuario);
+
+        // Registrar log de alteração de senha
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("id", id);
+        detalhes.put("email", usuario.getEmail());
+
+        logSistemaService.registrarLog(
+                "USUARIO",
+                "SENHA_ALTERADA",
+                "Usuario",
+                id,
+                String.format("Senha do usuário %s foi alterada", usuario.getEmail()),
+                detalhes,
+                httpRequest
+        );
     }
 
     @Transactional
-    public UsuarioResponseDTO alterarRoleUsuario(String id, UsuarioRole novaRole) {
+    public UsuarioResponseDTO alterarRoleUsuario(String id, UsuarioRole novaRole, HttpServletRequest httpRequest) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
 
+        String roleAntiga = usuario.getRole().name();
         usuario.setRole(novaRole);
         usuario = usuarioRepository.save(usuario);
+
+        // Registrar log de alteração de role
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("id", id);
+        detalhes.put("email", usuario.getEmail());
+        detalhes.put("roleAntiga", roleAntiga);
+        detalhes.put("roleNova", novaRole.name());
+
+        logSistemaService.registrarLog(
+                "USUARIO",
+                "ROLE_ALTERADA",
+                "Usuario",
+                id,
+                String.format("Role do usuário %s alterada de %s para %s", usuario.getEmail(), roleAntiga, novaRole.name()),
+                detalhes,
+                httpRequest
+        );
 
         return converterParaResponseDTO(usuario);
     }
@@ -230,7 +337,7 @@ public class UsuarioService {
         return usuario;
     }
 
-    private void atualizarCamposDoUsuario(Usuario usuario, UsuarioUpdateDTO  request) {
+    private void atualizarCamposDoUsuario(Usuario usuario, UsuarioUpdateDTO request) {
         if (request.getName() != null) usuario.setName(request.getName());
         if (request.getEmail() != null) usuario.setEmail(request.getEmail());
         if (request.getTelefone() != null) usuario.setTelefone(request.getTelefone());

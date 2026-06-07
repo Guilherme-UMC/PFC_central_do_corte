@@ -5,6 +5,7 @@ import com.centraldocorte.api.dto.AgendamentoResponseDTO;
 import com.centraldocorte.api.services.AgendamentoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,8 +25,10 @@ public class AgendamentoController {
     @PostMapping
     @PreAuthorize("hasRole('CLIENTE')")
     @Operation(summary = "Criar novo agendamento", description = "Cria um novo agendamento para o cliente autenticado")
-    public ResponseEntity<AgendamentoResponseDTO> criarAgendamento(@Valid @RequestBody AgendamentoRequestDTO request) {
-        AgendamentoResponseDTO agendamento = agendamentoService.criarAgendamento(request);
+    public ResponseEntity<AgendamentoResponseDTO> criarAgendamento(
+            @Valid @RequestBody AgendamentoRequestDTO request,
+            HttpServletRequest httpRequest) {
+        AgendamentoResponseDTO agendamento = agendamentoService.criarAgendamento(request, httpRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(agendamento);
     }
 
@@ -34,24 +37,29 @@ public class AgendamentoController {
     @Operation(summary = "Cancelar agendamento", description = "Cancela um agendamento existente (cliente ou dono da barbearia)")
     public ResponseEntity<AgendamentoResponseDTO> cancelarAgendamento(
             @PathVariable Long id,
-            @RequestParam String motivo) {
-        AgendamentoResponseDTO agendamento = agendamentoService.cancelarAgendamento(id, motivo);
+            @RequestParam String motivo,
+            HttpServletRequest httpRequest) {
+        AgendamentoResponseDTO agendamento = agendamentoService.cancelarAgendamento(id, motivo, httpRequest);
         return ResponseEntity.ok(agendamento);
     }
 
     @PutMapping("/{id}/confirmar")
     @PreAuthorize("hasAnyRole('BARBEARIA_ADM', 'FUNCIONARIO')")
     @Operation(summary = "Confirmar agendamento", description = "Confirma um agendamento pendente (apenas dono da barbearia)")
-    public ResponseEntity<AgendamentoResponseDTO> confirmarAgendamento(@PathVariable Long id) {
-        AgendamentoResponseDTO agendamento = agendamentoService.confirmarAgendamento(id);
+    public ResponseEntity<AgendamentoResponseDTO> confirmarAgendamento(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest) {
+        AgendamentoResponseDTO agendamento = agendamentoService.confirmarAgendamento(id, httpRequest);
         return ResponseEntity.ok(agendamento);
     }
 
     @PutMapping("/{id}/concluir")
-    @PreAuthorize("hasAnyRole('BARBEARIA_ADM', 'FUNCIONARIO')")  // Adicione FUNCIONARIO
+    @PreAuthorize("hasAnyRole('BARBEARIA_ADM', 'FUNCIONARIO')")
     @Operation(summary = "Concluir agendamento", description = "Marca um agendamento como concluído")
-    public ResponseEntity<AgendamentoResponseDTO> concluirAgendamento(@PathVariable Long id) {
-        AgendamentoResponseDTO agendamento = agendamentoService.concluirAgendamento(id);
+    public ResponseEntity<AgendamentoResponseDTO> concluirAgendamento(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest) {
+        AgendamentoResponseDTO agendamento = agendamentoService.concluirAgendamento(id, httpRequest);
         return ResponseEntity.ok(agendamento);
     }
 

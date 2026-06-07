@@ -9,6 +9,7 @@ import com.centraldocorte.api.domain.repositories.UsuarioRepository;
 import com.centraldocorte.api.dto.*;
 import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.exception.ResourceNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,13 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class FuncionarioService {
 
     private final AuthService authService;
@@ -31,22 +33,39 @@ public class FuncionarioService {
     private final FuncionarioBarbeariaRepository funcionarioBarbeariaRepository;
     private final BarbeariaRepository barbeariaRepository;
     private final AgendamentoRepository agendamentoRepository;
+    private final LogSistemaService logSistemaService;
 
     @Transactional
-    public UsuarioResponseDTO criarFuncionario(String barbeariaId, RegisterRequestDTO request) {
+    public UsuarioResponseDTO criarFuncionario(String barbeariaId, RegisterRequestDTO request, HttpServletRequest httpRequest) {
         log.info("Criando novo funcionário para barbearia: {}", barbeariaId);
 
         Barbearia barbearia = buscarBarbeariaPorId(barbeariaId);
-        authService.registrarUsuario(request, UsuarioRole.ROLE_FUNCIONARIO);
+        authService.registrarUsuario(request, UsuarioRole.ROLE_FUNCIONARIO, httpRequest);
         Usuario funcionario = usuarioService.buscarPorEmail(request.email());
 
         criarVinculo(funcionario, barbearia);
+
+        // Registrar log
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("funcionarioEmail", funcionario.getEmail());
+        detalhes.put("barbeariaId", barbeariaId);
+        detalhes.put("barbeariaNome", barbearia.getNome());
+
+        logSistemaService.registrarLog(
+                "FUNCIONARIO",
+                "CRIADO",
+                "Funcionario",
+                funcionario.getId(),
+                String.format("Funcionário %s foi criado e vinculado à barbearia %s", funcionario.getEmail(), barbearia.getNome()),
+                detalhes,
+                httpRequest
+        );
 
         return usuarioService.converterParaResponseDTO(funcionario);
     }
 
     @Transactional
-    public void vincularFuncionarioExistente(String barbeariaId, FuncionarioVinculoDTO dto) {
+    public void vincularFuncionarioExistente(String barbeariaId, FuncionarioVinculoDTO dto, HttpServletRequest httpRequest) {
         log.info("Vinculando funcionário existente à barbearia: {} - Email: {}", barbeariaId, dto.getFuncionarioEmail());
 
         Usuario funcionario = usuarioService.buscarUsuarioPorEmailIncluindoInativos(dto.getFuncionarioEmail());
@@ -70,6 +89,23 @@ public class FuncionarioService {
             criarVinculo(funcionario, barbearia);
             log.info("Novo vínculo criado para funcionário: {}", funcionario.getId());
         }
+
+        // Registrar log
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("funcionarioEmail", funcionario.getEmail());
+        detalhes.put("funcionarioNome", funcionario.getName());
+        detalhes.put("barbeariaId", barbeariaId);
+        detalhes.put("barbeariaNome", barbearia.getNome());
+
+        logSistemaService.registrarLog(
+                "FUNCIONARIO",
+                "VINCULADO",
+                "Funcionario",
+                funcionario.getId(),
+                String.format("Funcionário %s foi vinculado à barbearia %s", funcionario.getEmail(), barbearia.getNome()),
+                detalhes,
+                httpRequest
+        );
     }
 
     @Transactional(readOnly = true)
@@ -112,7 +148,7 @@ public class FuncionarioService {
     }
 
     @Transactional
-    public void desvincularFuncionario(String barbeariaId, String funcionarioId) {
+    public void desvincularFuncionario(String barbeariaId, String funcionarioId, HttpServletRequest httpRequest) {
         log.info("Desvinculando funcionário {} da barbearia {}", funcionarioId, barbeariaId);
 
         validarFuncionarioExiste(funcionarioId);
@@ -134,89 +170,30 @@ public class FuncionarioService {
         funcionarioBarbeariaRepository.save(vinculo);
 
         log.info("Funcionário desvinculado com sucesso");
-    }
 
-    private void transferirAgendamentos(String funcionarioId,
-                                        String barbeariaId,
-                                        List<Agendamento> agendamentos) {
-        String nomeFuncionarioOriginal = buscarNomeFuncionarioPorId(funcionarioId);
+        // Registrar log
+        UsuarioResponseDTO funcionario = usuarioService.buscarPorId(funcionarioId);
+        Barbearia barbearia = barbeariaRepository.findById(barbeariaId).orElse(null);
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("funcionarioId", funcionarioId);
+        detalhes.put("funcionarioNome", funcionario != null ? funcionario.getName() : null);
+        detalhes.put("barbeariaId", barbeariaId);
+        detalhes.put("barbeariaNome", barbearia != null ? barbearia.getNome() : null);
 
-        for (Agendamento agendamento : agendamentos) {
-            Usuario substituto = buscarFuncionarioSubstitutoDisponivel(
-                    barbeariaId,
-                    funcionarioId,
-                    agendamento.getDataHora()
-            );
-
-            if (substituto == null) {
-                throw new BusinessException(
-                        String.format("Não foi possível transferir agendamento do dia %s. Nenhum substituto disponível.",
-                                agendamento.getDataHora().toLocalDate())
-                );
-            }
-
-            String dataHoraTranferencia = LocalDateTime.now().format(formatter);
-
-            String observacao = String.format(
-                    "Transferido do funcionário %s para %s em %s. %s",
-                    nomeFuncionarioOriginal,
-                    substituto.getName(),
-                    dataHoraTranferencia,
-                    agendamento.getObservacao() != null ? agendamento.getObservacao() : ""
-            );
-
-            agendamento.setFuncionario(substituto);
-            agendamento.setObservacao(observacao);
-            agendamentoRepository.save(agendamento);
-        }
-    }
-
-    private String buscarNomeFuncionarioPorId(String funcionarioId) {
-        return usuarioRepository.findById(funcionarioId)
-                .map(Usuario::getName)
-                .orElse("Funcionário desconhecido (ID: " + funcionarioId + ")");
-    }
-
-    private Usuario buscarFuncionarioSubstitutoDisponivel(String barbeariaId,
-                                                          String funcionarioExcluidoId,
-                                                          LocalDateTime dataHora) {
-        List<FuncionarioBarbearia> vinculos = funcionarioBarbeariaRepository
-                .findFuncionariosDisponiveisPorBarbearia(barbeariaId);
-
-        for (FuncionarioBarbearia vinculo : vinculos) {
-            Usuario funcionario = vinculo.getFuncionario();
-
-            if (funcionario.getId().equals(funcionarioExcluidoId)) {
-                continue;
-            }
-
-            if (!funcionario.isActive()) {
-                log.debug("Funcionário {} está inativo no sistema, ignorando", funcionario.getId());
-                continue;
-            }
-
-            if (!vinculo.getAtivo()) {
-                log.debug("Vínculo do funcionário {} está inativo, ignorando", funcionario.getId());
-                continue;
-            }
-
-            long conflitos = agendamentoRepository.countAgendamentosPorFuncionarioNoHorario(
-                    funcionario.getId(), dataHora);
-
-            if (conflitos == 0) {
-                log.info("Substituto encontrado: {} (ID: {})", funcionario.getName(), funcionario.getId());
-                return funcionario;
-            }
-        }
-
-        log.warn("Nenhum substituto disponível encontrado para barbearia {} no horário {}", barbeariaId, dataHora);
-        return null;
+        logSistemaService.registrarLog(
+                "FUNCIONARIO",
+                "DESVINCULADO",
+                "Funcionario",
+                funcionarioId,
+                String.format("Funcionário %s foi desvinculado da barbearia", funcionario != null ? funcionario.getEmail() : funcionarioId),
+                detalhes,
+                httpRequest
+        );
     }
 
     @Transactional
-    public void alternarDisponibilidadeFuncionario(String barbeariaId, String funcionarioId) {
+    public void alternarDisponibilidadeFuncionario(String barbeariaId, String funcionarioId, HttpServletRequest httpRequest) {
         log.info("Alternando disponibilidade do funcionário {} na barbearia {}", funcionarioId, barbeariaId);
 
         Usuario funcionario = usuarioService.buscarUsuarioPorIdIncluindoInativos(funcionarioId);
@@ -230,13 +207,33 @@ public class FuncionarioService {
                 .findByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vínculo ativo não encontrado"));
 
+        boolean disponibilidadeAntiga = vinculo.getDisponivel();
         vinculo.setDisponivel(!vinculo.getDisponivel());
         funcionarioBarbeariaRepository.save(vinculo);
 
         String status = vinculo.getDisponivel() ? "disponível" : "indisponível";
         log.info("Funcionário agora está {} para agendamentos", status);
+
+        // Registrar log
+        Map<String, Object> detalhes = new HashMap<>();
+        detalhes.put("funcionarioId", funcionarioId);
+        detalhes.put("funcionarioNome", funcionario.getName());
+        detalhes.put("barbeariaId", barbeariaId);
+        detalhes.put("disponibilidadeAntiga", disponibilidadeAntiga);
+        detalhes.put("disponibilidadeNova", vinculo.getDisponivel());
+
+        logSistemaService.registrarLog(
+                "FUNCIONARIO",
+                "DISponibilidade_ALTERADA",
+                "Funcionario",
+                funcionarioId,
+                String.format("Disponibilidade do funcionário %s alterada para %s", funcionario.getName(), status),
+                detalhes,
+                httpRequest
+        );
     }
 
+    // Métodos auxiliares (mantenha os existentes)
     private Barbearia buscarBarbeariaPorId(String id) {
         return barbeariaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Barbearia não encontrada: " + id));
@@ -287,23 +284,81 @@ public class FuncionarioService {
         funcionarioBarbeariaRepository.save(vinculo);
     }
 
-    private boolean isFuncionarioAtivoEDisponivel(String funcionarioId, String barbeariaId) {
-        if (!usuarioService.existsById(funcionarioId)) {
-            return false;
-        }
-
-        Usuario funcionario = usuarioService.buscarUsuarioPorIdIncluindoInativos(funcionarioId);
-        if (!funcionario.isActive()) {
-            return false;
-        }
-
-        return funcionarioBarbeariaRepository
-                .existsByFuncionarioIdAndBarbeariaIdAndAtivoTrueAndDisponivelTrue(
-                        funcionarioId, barbeariaId);
-    }
-
     private boolean possuiVinculoAtivo(String funcionarioId) {
         return funcionarioBarbeariaRepository.existsByFuncionarioIdAndAtivoTrue(funcionarioId);
+    }
+
+    private void transferirAgendamentos(String funcionarioId, String barbeariaId, List<Agendamento> agendamentos) {
+        String nomeFuncionarioOriginal = buscarNomeFuncionarioPorId(funcionarioId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
+
+        for (Agendamento agendamento : agendamentos) {
+            Usuario substituto = buscarFuncionarioSubstitutoDisponivel(
+                    barbeariaId,
+                    funcionarioId,
+                    agendamento.getDataHora()
+            );
+
+            if (substituto == null) {
+                throw new BusinessException(
+                        String.format("Não foi possível transferir agendamento do dia %s. Nenhum substituto disponível.",
+                                agendamento.getDataHora().toLocalDate())
+                );
+            }
+
+            String dataHoraTransferencia = LocalDateTime.now().format(formatter);
+            String observacao = String.format(
+                    "Transferido do funcionário %s para %s em %s. %s",
+                    nomeFuncionarioOriginal,
+                    substituto.getName(),
+                    dataHoraTransferencia,
+                    agendamento.getObservacao() != null ? agendamento.getObservacao() : ""
+            );
+
+            agendamento.setFuncionario(substituto);
+            agendamento.setObservacao(observacao);
+            agendamentoRepository.save(agendamento);
+        }
+    }
+
+    private String buscarNomeFuncionarioPorId(String funcionarioId) {
+        return usuarioRepository.findById(funcionarioId)
+                .map(Usuario::getName)
+                .orElse("Funcionário desconhecido (ID: " + funcionarioId + ")");
+    }
+
+    private Usuario buscarFuncionarioSubstitutoDisponivel(String barbeariaId, String funcionarioExcluidoId, LocalDateTime dataHora) {
+        List<FuncionarioBarbearia> vinculos = funcionarioBarbeariaRepository
+                .findFuncionariosDisponiveisPorBarbearia(barbeariaId);
+
+        for (FuncionarioBarbearia vinculo : vinculos) {
+            Usuario funcionario = vinculo.getFuncionario();
+
+            if (funcionario.getId().equals(funcionarioExcluidoId)) {
+                continue;
+            }
+
+            if (!funcionario.isActive()) {
+                log.debug("Funcionário {} está inativo no sistema, ignorando", funcionario.getId());
+                continue;
+            }
+
+            if (!vinculo.getAtivo()) {
+                log.debug("Vínculo do funcionário {} está inativo, ignorando", funcionario.getId());
+                continue;
+            }
+
+            long conflitos = agendamentoRepository.countAgendamentosPorFuncionarioNoHorario(
+                    funcionario.getId(), dataHora);
+
+            if (conflitos == 0) {
+                log.info("Substituto encontrado: {} (ID: {})", funcionario.getName(), funcionario.getId());
+                return funcionario;
+            }
+        }
+
+        log.warn("Nenhum substituto disponível encontrado para barbearia {} no horário {}", barbeariaId, dataHora);
+        return null;
     }
 
     public boolean verificarDisponibilidadeDoFuncionario(String barbeariaId, String funcionarioId, LocalDateTime dataHora) {
@@ -315,7 +370,6 @@ public class FuncionarioService {
         }
 
         LocalDateTime horaFim = dataHora.plusHours(1);
-
         List<Agendamento> agendamentosConflitantes = agendamentoRepository
                 .findByFuncionarioIdAndDataHoraBetween(funcionarioId, dataHora, horaFim);
 

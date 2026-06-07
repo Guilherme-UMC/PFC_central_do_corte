@@ -55,6 +55,8 @@ public class SecurityConfig {
                         //Admin
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/barbearia/owner/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/admin/logs/**").hasRole("ADMIN")
+
 
                         //Barbearia
                         .requestMatchers(HttpMethod.GET, "/barbearia/minhas").hasAnyRole("ADMIN", "BARBEARIA_ADM")
