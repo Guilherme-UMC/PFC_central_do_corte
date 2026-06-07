@@ -14,42 +14,31 @@ import java.util.List;
 @Repository
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
 
-    // Buscar por barbearia
+    // ========== MÉTODOS EXISTENTES ==========
+
     List<Agendamento> findByBarbeariaIdOrderByDataHoraDesc(String barbeariaId);
-
-    // Buscar por cliente
     List<Agendamento> findByClienteIdOrderByDataHoraDesc(String clienteId);
-
-    // Verificar existência por horário
     boolean existsByBarbeariaIdAndDataHoraAndStatusNot(String barbeariaId, LocalDateTime dataHora, StatusAgendamento status);
-
-    // Buscar entre datas
     List<Agendamento> findByBarbeariaIdAndDataHoraBetween(String barbeariaId, LocalDateTime inicio, LocalDateTime fim);
 
-    // Agendamentos do dia
     @Query("SELECT a FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND DATE(a.dataHora) = CURRENT_DATE ORDER BY a.dataHora")
     List<Agendamento> findAgendamentosDoDia(@Param("barbeariaId") String barbeariaId);
 
-    // Contar agendamentos confirmados no horário (barbearia)
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.dataHora = :dataHora AND a.status <> 'CANCELADO_PELO_CLIENTE' AND a.status <> 'CANCELADO_PELA_BARBEARIA'")
     long countAgendamentosConfirmadosNoHorario(@Param("barbeariaId") String barbeariaId, @Param("dataHora") LocalDateTime dataHora);
 
-    // Buscar agendamentos de um funcionário em um período
     List<Agendamento> findByFuncionarioIdAndDataHoraBetween(String funcionarioId, LocalDateTime inicio, LocalDateTime fim);
 
-    // Contar agendamentos de um funcionário em um horário específico
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.funcionario.id = :funcionarioId AND a.dataHora = :dataHora AND a.status <> 'CANCELADO_PELO_CLIENTE' AND a.status <> 'CANCELADO_PELA_BARBEARIA'")
     long countAgendamentosPorFuncionarioNoHorario(@Param("funcionarioId") String funcionarioId, @Param("dataHora") LocalDateTime dataHora);
 
-    // Busca agendamentos futuros de um funcionário (não cancelados e não concluídos)
     @Query("SELECT a FROM Agendamento a WHERE a.funcionario.id = :funcionarioId " +
             "AND a.dataHora > :agora " +
             "AND a.status <> 'CANCELADO_PELO_CLIENTE' " +
             "AND a.status <> 'CANCELADO_PELA_BARBEARIA' " +
             "AND a.status <> 'CONCLUIDO' " +
             "ORDER BY a.dataHora ASC")
-    List<Agendamento> findFutureAgendamentosByFuncionarioId(@Param("funcionarioId") String funcionarioId,
-                                                            @Param("agora") LocalDateTime agora);
+    List<Agendamento> findFutureAgendamentosByFuncionarioId(@Param("funcionarioId") String funcionarioId, @Param("agora") LocalDateTime agora);
 
     @Modifying
     @Query("UPDATE Agendamento a SET a.funcionario.id = :novoFuncionarioId, " +
@@ -91,20 +80,26 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     // Contar agendamentos por status
     Long countByBarbeariaIdAndStatus(String barbeariaId, StatusAgendamento status);
 
-    // Contar agendamentos por lista de status
-    Long countByBarbeariaIdAndStatusIn(String barbeariaId, List<StatusAgendamento> status);
-
-    // Contar clientes distintos atendidos
-    @Query("SELECT COUNT(DISTINCT a.cliente.id) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.status IN :status")
-    Long countDistinctClientesByBarbeariaIdAndStatusIn(@Param("barbeariaId") String barbeariaId, @Param("status") List<StatusAgendamento> status);
-
-    // Somar preço dos serviços de agendamentos em um período
-    @Query("SELECT COALESCE(SUM(a.servico.preco), 0) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.status IN :status AND a.dataHora BETWEEN :inicio AND :fim")
-    BigDecimal sumPrecoServicoByBarbeariaIdAndStatusInAndDataHoraBetween(
+    // Contar agendamentos por status e período
+    @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.status = :status AND a.dataHora BETWEEN :inicio AND :fim")
+    Long countByBarbeariaIdAndStatusAndDataHoraBetween(
             @Param("barbeariaId") String barbeariaId,
-            @Param("status") List<StatusAgendamento> status,
+            @Param("status") StatusAgendamento status,
             @Param("inicio") LocalDateTime inicio,
             @Param("fim") LocalDateTime fim);
 
+    // Contar agendamentos por lista de status
+    @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.status IN :status")
+    Long countByBarbeariaIdAndStatusIn(
+            @Param("barbeariaId") String barbeariaId,
+            @Param("status") List<StatusAgendamento> status);
+
+    // Contar clientes distintos atendidos
+    @Query("SELECT COUNT(DISTINCT a.cliente.id) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.status = :status")
+    Long countDistinctClientesByBarbeariaIdAndStatus(
+            @Param("barbeariaId") String barbeariaId,
+            @Param("status") StatusAgendamento status);
+
+    // Verificar se funcionário tem agendamento em um horário
     boolean existsByFuncionarioIdAndDataHoraBetween(String funcionarioId, LocalDateTime inicio, LocalDateTime fim);
 }

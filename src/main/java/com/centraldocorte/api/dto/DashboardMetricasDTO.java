@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 
 @Data
@@ -16,7 +15,9 @@ public class DashboardMetricasDTO {
     private Long agendamentosMes;
     private Double taxaConfirmacao;
     private BigDecimal faturamentoMes;
+    private BigDecimal faturamentoAno;
     private Long clientesAtendidos;
+    private Double mediaAvaliacao;
     private Long cancelamentos;
     private Long servicosRealizados;
 }

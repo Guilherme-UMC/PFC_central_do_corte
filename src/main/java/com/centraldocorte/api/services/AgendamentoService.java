@@ -172,8 +172,7 @@ public class AgendamentoService {
             }
 
             // Verifica se o funcionário tem conflito de horário
-            boolean temConflito = agendamentoRepository
-                    .existsByFuncionarioIdAndDataHoraBetween(funcionario.getId(), dataHora, fimExpediente);
+            boolean temConflito = agendamentoRepository.existsByFuncionarioIdAndDataHoraBetween(funcionario.getId(), dataHora, fimExpediente);
 
             if (!temConflito) {
                 log.info("Funcionário disponível encontrado: {} (ID: {})", funcionario.getName(), funcionario.getId());
