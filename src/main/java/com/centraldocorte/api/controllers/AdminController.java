@@ -27,7 +27,7 @@ public class AdminController {
     @PostMapping("/users")
     public ResponseEntity<UsuarioResponseDTO> criarUsuario(
             @Valid @RequestBody UsuarioRequestDTO request,
-            HttpServletRequest httpRequest) {  // ← ADICIONAR HttpServletRequest
+            HttpServletRequest httpRequest) {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.criarUsuario(request, httpRequest));
     }
 
@@ -35,7 +35,7 @@ public class AdminController {
     @PostMapping("/users/admin")
     public ResponseEntity<UsuarioResponseDTO> criarAdmin(
             @Valid @RequestBody UsuarioRequestDTO request,
-            HttpServletRequest httpRequest) {  // ← ADICIONAR HttpServletRequest
+            HttpServletRequest httpRequest) {
         request.setRole(UsuarioRole.ROLE_ADMIN);
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.criarUsuario(request, httpRequest));
     }

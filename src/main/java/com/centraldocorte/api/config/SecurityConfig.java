@@ -36,13 +36,12 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        //Swagger
+
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll()
 
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        //Rotas protegidas
-                        //Users
+
                         .requestMatchers(HttpMethod.GET, "/users").hasAnyRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/users/*").hasAnyRole("ADMIN", "BARBEARIA_ADM", "CLIENTE", "FUNCIONARIO")
                         .requestMatchers(HttpMethod.GET, "/users/role/*").hasAnyRole("ADMIN", "BARBEARIA_ADM")
@@ -52,13 +51,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/users/*/toggle-status").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/users/*/change-password").hasAnyRole("ADMIN", "BARBEARIA_ADM", "CLIENTE", "FUNCIONARIO")
 
-                        //Admin
+
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/barbearia/owner/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/admin/logs/**").hasRole("ADMIN")
 
 
-                        //Barbearia
+
                         .requestMatchers(HttpMethod.GET, "/barbearia/minhas").hasAnyRole("ADMIN", "BARBEARIA_ADM")
                         .requestMatchers(HttpMethod.POST, "/barbearia/**").hasAnyRole("ADMIN", "BARBEARIA_ADM")
                         .requestMatchers(HttpMethod.PUT, "/barbearia/**").hasAnyRole("ADMIN", "BARBEARIA_ADM")
@@ -66,13 +65,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/barbearia/**").hasAnyRole("ADMIN", "BARBEARIA_ADM")
 
 
-                        //Funcionario
+
                         .requestMatchers("/funcionario/**").hasAnyRole("FUNCIONARIO", "BARBEARIA_ADM", "ADMIN")
 
-                        //Cliente
+
                         .requestMatchers("/cliente/**").hasAnyRole("CLIENTE", "ADMIN")
 
-                        // Rotas públicas
+
                         .requestMatchers(HttpMethod.GET, "/barbearia/buscar-por-cep/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/barbearia/buscar-cep/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
@@ -83,7 +82,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/funcionarios/barbearia/{barbeariaId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/barbearias/{id}/horarios").permitAll()
 
-                        // Qualquer outra rota precisa de autenticação
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(filtroDeAutenticacaoJwt, UsernamePasswordAuthenticationFilter.class)
@@ -95,18 +94,18 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",  // Vite padrão
-                "http://localhost:3000",   // React padrão
+                "http://localhost:5173",
+                "http://localhost:3000",
                 "http://127.0.0.1:5173",
                 "http://127.0.0.1:3000"
         ));
 
-        // Métodos HTTP permitidos
+
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
         ));
 
-        // Headers permitidos
+
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
@@ -117,15 +116,15 @@ public class SecurityConfig {
                 "Access-Control-Request-Headers"
         ));
 
-        // Headers expostos
+
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization"
         ));
 
-        // Permitir credenciais (cookies, auth headers)
+
         configuration.setAllowCredentials(true);
 
-        // Tempo de cache da configuração CORS (em segundos)
+
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

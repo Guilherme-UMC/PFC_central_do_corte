@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS produtos (
-                                        id VARCHAR(36) PRIMARY KEY DEFAULT (gen_random_uuid()::text),
+    id VARCHAR(36) PRIMARY KEY DEFAULT (gen_random_uuid()::text),
     barbearia_id VARCHAR(36) NOT NULL,
     nome VARCHAR(100) NOT NULL,
     descricao VARCHAR(500),

@@ -38,7 +38,6 @@ public class HorarioService {
         List<HorarioFuncionamento> horariosSalvos = new ArrayList<>();
 
         for (HorarioFuncionamentoDTO dto : horariosDTO) {
-            // Buscar se já existe horário para este dia (atualiza) ou cria novo
             DiaSemana dia = DiaSemana.valueOf(dto.getDia());
             HorarioFuncionamento horario = horarioRepository
                     .findByBarbeariaIdAndDia(barbeariaId, dia)

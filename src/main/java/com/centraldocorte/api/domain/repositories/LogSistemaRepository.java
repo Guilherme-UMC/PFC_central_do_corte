@@ -13,7 +13,6 @@ import java.util.List;
 @Repository
 public interface LogSistemaRepository extends JpaRepository<LogSistema, Long> {
 
-    // Métodos básicos
     Page<LogSistema> findAllByOrderByDataHoraDesc(Pageable pageable);
 
     Page<LogSistema> findByTipoContainingIgnoreCaseOrderByDataHoraDesc(String tipo, Pageable pageable);
@@ -24,18 +23,15 @@ public interface LogSistemaRepository extends JpaRepository<LogSistema, Long> {
 
     Page<LogSistema> findByDataHoraBetweenOrderByDataHoraDesc(LocalDateTime inicio, LocalDateTime fim, Pageable pageable);
 
-    // Combinações
     Page<LogSistema> findByTipoContainingIgnoreCaseAndAcaoContainingIgnoreCaseOrderByDataHoraDesc(
             String tipo, String acao, Pageable pageable);
 
-    // Listar tipos e ações distintos
     @Query("SELECT DISTINCT l.tipo FROM LogSistema l ORDER BY l.tipo")
     List<String> findDistinctTipos();
 
     @Query("SELECT DISTINCT l.acao FROM LogSistema l ORDER BY l.acao")
     List<String> findDistinctAcoes();
 
-    // Estatísticas
     @Query("SELECT l.tipo, COUNT(l) FROM LogSistema l GROUP BY l.tipo")
     List<Object[]> countByTipo();
 }

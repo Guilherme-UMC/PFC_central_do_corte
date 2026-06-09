@@ -180,9 +180,7 @@ public class InativacaoService {
                 .orElse("Funcionário desconhecido (ID: " + funcionarioId + ")");
     }
 
-    private Usuario buscarFuncionarioSubstitutoDisponivel(String barbeariaId,
-                                                          String funcionarioExcluidoId,
-                                                          LocalDateTime dataHora) {
+    private Usuario buscarFuncionarioSubstitutoDisponivel(String barbeariaId, String funcionarioExcluidoId, LocalDateTime dataHora) {
         List<FuncionarioBarbearia> vinculos = funcionarioBarbeariaRepository
                 .findFuncionariosDisponiveisPorBarbearia(barbeariaId);
 

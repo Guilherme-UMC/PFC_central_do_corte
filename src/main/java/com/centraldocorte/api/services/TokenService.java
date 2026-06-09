@@ -17,8 +17,8 @@ import java.util.function.Function;
 @Service
 public class TokenService {
 
-    private static final long DURACAO_ACCESS_TOKEN_EM_MS = 1000L * 60 * 30; // 30 minutos
-    private static final long DURACAO_REFRESH_TOKEN_EM_MS = 1000L * 60 * 60 * 24 * 7; // 7 dias
+    private static final long DURACAO_ACCESS_TOKEN_EM_MS = 1000L * 60 * 30;
+    private static final long DURACAO_REFRESH_TOKEN_EM_MS = 1000L * 60 * 60 * 24 * 7;
 
     @Value("${api.security.token.secret}")
     private String segredo;
@@ -43,12 +43,12 @@ public class TokenService {
         Date expiracao = new Date(System.currentTimeMillis() + duracao);
 
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(agora)
-                .setExpiration(expiracao)
-                .signWith(obterChaveDeAssinatura(), SignatureAlgorithm.HS256)
-                .compact();
+            .setClaims(claims)
+            .setSubject(subject)
+            .setIssuedAt(agora)
+            .setExpiration(expiracao)
+            .signWith(obterChaveDeAssinatura(), SignatureAlgorithm.HS256)
+            .compact();
     }
 
     public String validarAccessToken(String token) {
@@ -124,10 +124,10 @@ public class TokenService {
 
     private Claims extrairTodosClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(obterChaveDeAssinatura())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+            .setSigningKey(obterChaveDeAssinatura())
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
     }
 
     private boolean tokenEstaExpirado(String token) {

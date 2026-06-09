@@ -26,12 +26,12 @@ public class BuscaService {
     public BuscaResponseDTO buscarGlobal(String termo) {
         if (termo == null || termo.trim().isEmpty()) {
             return BuscaResponseDTO.builder()
-                    .termo(termo)
-                    .barbearias(List.of())
-                    .servicos(List.of())
-                    .totalResultados(0)
-                    .temMaisResultados(false)
-                    .build();
+                .termo(termo)
+                .barbearias(List.of())
+                .servicos(List.of())
+                .totalResultados(0)
+                .temMaisResultados(false)
+                .build();
         }
 
         String termoLower = termo.toLowerCase().trim();

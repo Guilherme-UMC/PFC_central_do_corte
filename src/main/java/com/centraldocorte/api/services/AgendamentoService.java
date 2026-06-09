@@ -97,11 +97,11 @@ public class AgendamentoService {
         Usuario funcionario = null;
 
         if (request.getFuncionarioId() != null && !request.getFuncionarioId().isEmpty()) {
-            // CASO 1: Cliente escolheu um funcionário específico
+
             funcionario = usuarioRepository.findById(request.getFuncionarioId())
                     .orElseThrow(() -> new ResourceNotFoundException("Funcionário não encontrado"));
 
-            // Verifica se o funcionário pertence à barbearia
+
             boolean pertenceABarbearia = funcionarioBarbeariaRepository
                     .existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionario.getId(), barbearia.getId());
 
@@ -109,18 +109,16 @@ public class AgendamentoService {
                 throw new BusinessException("Este funcionário não pertence à barbearia selecionada");
             }
 
-            // Verifica se o usuário é realmente um funcionário
             if (funcionario.getRole() != UsuarioRole.ROLE_FUNCIONARIO) {
                 throw new BusinessException("O usuário selecionado não é um funcionário");
             }
 
-            // Verifica disponibilidade do funcionário específico
             if (!disponibilidadeService.isHorarioDisponivelParaFuncionario(funcionario.getId(), request.getDataHora())) {
                 throw new BusinessException("Este funcionário não está disponível no horário selecionado");
             }
 
         } else {
-            // CASO 2: Cliente escolheu "QUALQUER UM" - Buscar funcionário disponível automaticamente
+
             funcionario = buscarFuncionarioDisponivel(
                     barbearia.getId(),
                     request.getDataHora(),
@@ -135,7 +133,6 @@ public class AgendamentoService {
                     funcionario.getName(), cliente.getEmail());
         }
 
-        // Criar o agendamento
         Agendamento agendamento = new Agendamento();
         agendamento.setBarbearia(barbearia);
         agendamento.setCliente(cliente);
@@ -150,7 +147,6 @@ public class AgendamentoService {
         log.info("Agendamento criado com sucesso! ID: {}, Funcionário: {}, Cliente: {}",
                 saved.getId(), funcionario.getName(), cliente.getName());
 
-        // Registrar log
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("barbeariaId", barbearia.getId());
         detalhes.put("barbeariaNome", barbearia.getNome());
@@ -174,7 +170,7 @@ public class AgendamentoService {
     }
 
     private Usuario buscarFuncionarioDisponivel(String barbeariaId, LocalDateTime dataHora, Integer duracaoMinutos) {
-        // Usa o método existente findByBarbeariaIdAndAtivoTrue
+
         List<FuncionarioBarbearia> funcionariosVinculados = funcionarioBarbeariaRepository
                 .findByBarbeariaIdAndAtivoTrue(barbeariaId);
 
@@ -189,13 +185,11 @@ public class AgendamentoService {
         for (FuncionarioBarbearia vinculo : funcionariosVinculados) {
             Usuario funcionario = vinculo.getFuncionario();
 
-            // Verifica se o funcionário está ativo no sistema
             if (!funcionario.isActive()) {
                 log.debug("Funcionário {} está inativo no sistema, ignorando", funcionario.getId());
                 continue;
             }
 
-            // Verifica se o funcionário tem conflito de horário
             boolean temConflito = agendamentoRepository.existsByFuncionarioIdAndDataHoraBetween(funcionario.getId(), dataHora, fimExpediente);
 
             if (!temConflito) {
@@ -251,7 +245,6 @@ public class AgendamentoService {
 
         Agendamento updated = agendamentoRepository.save(agendamento);
 
-        // Registrar log de cancelamento
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("agendamentoId", agendamentoId);
         detalhes.put("motivo", motivo);
@@ -289,7 +282,6 @@ public class AgendamentoService {
         agendamento.setStatus(StatusAgendamento.CONFIRMADO);
         Agendamento updated = agendamentoRepository.save(agendamento);
 
-        // Registrar log de confirmação
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("agendamentoId", agendamentoId);
         detalhes.put("clienteNome", agendamento.getCliente().getName());
@@ -316,7 +308,6 @@ public class AgendamentoService {
 
         Usuario usuario = getUsuarioAutenticado();
 
-        // Permite proprietário OU qualquer usuário com role FUNCIONARIO
         boolean isOwner = agendamento.getBarbearia().getOwner().getId().equals(usuario.getId());
         boolean isFuncionario = usuario.getRole() == UsuarioRole.ROLE_FUNCIONARIO;
 
@@ -331,7 +322,6 @@ public class AgendamentoService {
         agendamento.setStatus(StatusAgendamento.CONCLUIDO);
         Agendamento updated = agendamentoRepository.save(agendamento);
 
-        // Registrar log de conclusão
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("agendamentoId", agendamentoId);
         detalhes.put("clienteNome", agendamento.getCliente().getName());

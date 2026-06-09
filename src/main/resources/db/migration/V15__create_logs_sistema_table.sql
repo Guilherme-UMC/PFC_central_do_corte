@@ -1,4 +1,3 @@
--- Tabela de logs do sistema
 CREATE TABLE IF NOT EXISTS logs_sistema (
     id BIGSERIAL PRIMARY KEY,
     tipo VARCHAR(50) NOT NULL,
@@ -16,13 +15,11 @@ CREATE TABLE IF NOT EXISTS logs_sistema (
     data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
--- Índices para performance
 CREATE INDEX idx_logs_tipo ON logs_sistema(tipo);
 CREATE INDEX idx_logs_usuario ON logs_sistema(usuario_id);
 CREATE INDEX idx_logs_data ON logs_sistema(data_hora);
 CREATE INDEX idx_logs_entidade ON logs_sistema(entidade);
 CREATE INDEX idx_logs_entidade_id ON logs_sistema(entidade_id);
-
 
 COMMENT ON TABLE logs_sistema IS 'Registro de todas as ações do sistema';
 COMMENT ON COLUMN logs_sistema.tipo IS 'Tipo da ação: AGENDAMENTO, USUARIO, BARBEARIA, SERVICO, FUNCIONARIO, LOGIN, LOGOUT';

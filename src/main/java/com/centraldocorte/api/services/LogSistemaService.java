@@ -64,19 +64,19 @@ public class LogSistemaService {
             String userAgent = request != null ? request.getHeader("User-Agent") : null;
 
             LogSistema logSistema = LogSistema.builder()
-                    .tipo(tipo)
-                    .acao(acao)
-                    .usuarioId(usuarioId)
-                    .usuarioEmail(email)
-                    .usuarioNome(usuarioNome)
-                    .usuarioRole(usuarioRole)
-                    .entidade(entidade)
-                    .entidadeId(entidadeId)
-                    .descricao(descricao)
-                    .detalhes(detalhesJson)
-                    .ipOrigem(ipOrigem)
-                    .userAgent(userAgent)
-                    .build();
+                .tipo(tipo)
+                .acao(acao)
+                .usuarioId(usuarioId)
+                .usuarioEmail(email)
+                .usuarioNome(usuarioNome)
+                .usuarioRole(usuarioRole)
+                .entidade(entidade)
+                .entidadeId(entidadeId)
+                .descricao(descricao)
+                .detalhes(detalhesJson)
+                .ipOrigem(ipOrigem)
+                .userAgent(userAgent)
+                .build();
 
             logSistemaRepository.save(logSistema);
             log.info("Log registrado: {} - {}", tipo, acao);
@@ -98,7 +98,6 @@ public class LogSistemaService {
             LocalDateTime dataInicio = filtro.getDataInicio();
             LocalDateTime dataFim = filtro.getDataFim();
 
-            // Aplicar filtros
             if (tipo != null && !tipo.isEmpty() && acao != null && !acao.isEmpty()) {
                 logsPage = logSistemaRepository.findByTipoContainingIgnoreCaseAndAcaoContainingIgnoreCaseOrderByDataHoraDesc(
                         tipo, acao, pageable);
@@ -119,7 +118,6 @@ public class LogSistemaService {
                 logsPage = logSistemaRepository.findAllByOrderByDataHoraDesc(pageable);
             }
 
-            // Se não encontrou nada, retorna página vazia
             if (logsPage == null) {
                 logsPage = Page.empty(pageable);
             }
@@ -138,7 +136,7 @@ public class LogSistemaService {
 
         } catch (Exception e) {
             log.error("Erro ao buscar logs: {}", e.getMessage(), e);
-            // Retornar página vazia em caso de erro
+
             return LogSistemaResponseDTO.builder()
                     .logs(List.of())
                     .totalElements(0L)
@@ -186,20 +184,20 @@ public class LogSistemaService {
 
     private LogSistemaDTO converterParaDTO(LogSistema logSistema) {
         return LogSistemaDTO.builder()
-                .id(logSistema.getId())
-                .tipo(logSistema.getTipo())
-                .acao(logSistema.getAcao())
-                .usuarioId(logSistema.getUsuarioId())
-                .usuarioEmail(logSistema.getUsuarioEmail())
-                .usuarioNome(logSistema.getUsuarioNome())
-                .usuarioRole(logSistema.getUsuarioRole())
-                .entidade(logSistema.getEntidade())
-                .entidadeId(logSistema.getEntidadeId())
-                .descricao(logSistema.getDescricao())
-                .detalhes(logSistema.getDetalhes())
-                .ipOrigem(logSistema.getIpOrigem())
-                .dataHora(logSistema.getDataHora())
-                .build();
+            .id(logSistema.getId())
+            .tipo(logSistema.getTipo())
+            .acao(logSistema.getAcao())
+            .usuarioId(logSistema.getUsuarioId())
+            .usuarioEmail(logSistema.getUsuarioEmail())
+            .usuarioNome(logSistema.getUsuarioNome())
+            .usuarioRole(logSistema.getUsuarioRole())
+            .entidade(logSistema.getEntidade())
+            .entidadeId(logSistema.getEntidadeId())
+            .descricao(logSistema.getDescricao())
+            .detalhes(logSistema.getDetalhes())
+            .ipOrigem(logSistema.getIpOrigem())
+            .dataHora(logSistema.getDataHora())
+            .build();
     }
 
     private String getClientIp(HttpServletRequest request) {

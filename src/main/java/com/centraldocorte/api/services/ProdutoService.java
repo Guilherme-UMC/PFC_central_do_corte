@@ -114,18 +114,18 @@ public class ProdutoService {
 
     private ProdutoResponseDTO converterParaResponseDTO(Produto produto) {
         return ProdutoResponseDTO.builder()
-                .id(produto.getId())
-                .barbeariaId(produto.getBarbearia().getId())
-                .barbeariaNome(produto.getBarbearia().getNome())
-                .nome(produto.getNome())
-                .descricao(produto.getDescricao())
-                .preco(produto.getPreco())
-                .imagemUrl(produto.getImagemUrl())
-                .categoria(produto.getCategoria())
-                .marca(produto.getMarca())
-                .ativo(produto.getAtivo())
-                .criadoEm(produto.getCriadoEm())
-                .atualizadoEm(produto.getAtualizadoEm())
-                .build();
+            .id(produto.getId())
+            .barbeariaId(produto.getBarbearia().getId())
+            .barbeariaNome(produto.getBarbearia().getNome())
+            .nome(produto.getNome())
+            .descricao(produto.getDescricao())
+            .preco(produto.getPreco())
+            .imagemUrl(produto.getImagemUrl())
+            .categoria(produto.getCategoria())
+            .marca(produto.getMarca())
+            .ativo(produto.getAtivo())
+            .criadoEm(produto.getCriadoEm())
+            .atualizadoEm(produto.getAtualizadoEm())
+            .build();
     }
 }

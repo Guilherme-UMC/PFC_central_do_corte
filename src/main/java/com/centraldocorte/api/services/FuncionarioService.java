@@ -45,7 +45,6 @@ public class FuncionarioService {
 
         criarVinculo(funcionario, barbearia);
 
-        // Registrar log
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("funcionarioEmail", funcionario.getEmail());
         detalhes.put("barbeariaId", barbeariaId);
@@ -90,7 +89,6 @@ public class FuncionarioService {
             log.info("Novo vínculo criado para funcionário: {}", funcionario.getId());
         }
 
-        // Registrar log
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("funcionarioEmail", funcionario.getEmail());
         detalhes.put("funcionarioNome", funcionario.getName());
@@ -171,7 +169,6 @@ public class FuncionarioService {
 
         log.info("Funcionário desvinculado com sucesso");
 
-        // Registrar log
         UsuarioResponseDTO funcionario = usuarioService.buscarPorId(funcionarioId);
         Barbearia barbearia = barbeariaRepository.findById(barbeariaId).orElse(null);
 
@@ -214,7 +211,6 @@ public class FuncionarioService {
         String status = vinculo.getDisponivel() ? "disponível" : "indisponível";
         log.info("Funcionário agora está {} para agendamentos", status);
 
-        // Registrar log
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("funcionarioId", funcionarioId);
         detalhes.put("funcionarioNome", funcionario.getName());
@@ -233,7 +229,6 @@ public class FuncionarioService {
         );
     }
 
-    // Métodos auxiliares (mantenha os existentes)
     private Barbearia buscarBarbeariaPorId(String id) {
         return barbeariaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Barbearia não encontrada: " + id));
@@ -301,18 +296,17 @@ public class FuncionarioService {
 
             if (substituto == null) {
                 throw new BusinessException(
-                        String.format("Não foi possível transferir agendamento do dia %s. Nenhum substituto disponível.",
-                                agendamento.getDataHora().toLocalDate())
+                        String.format("Não foi possível transferir agendamento do dia %s. Nenhum substituto disponível.", agendamento.getDataHora().toLocalDate())
                 );
             }
 
             String dataHoraTransferencia = LocalDateTime.now().format(formatter);
             String observacao = String.format(
-                    "Transferido do funcionário %s para %s em %s. %s",
-                    nomeFuncionarioOriginal,
-                    substituto.getName(),
-                    dataHoraTransferencia,
-                    agendamento.getObservacao() != null ? agendamento.getObservacao() : ""
+                "Transferido do funcionário %s para %s em %s. %s",
+                nomeFuncionarioOriginal,
+                substituto.getName(),
+                dataHoraTransferencia,
+                agendamento.getObservacao() != null ? agendamento.getObservacao() : ""
             );
 
             agendamento.setFuncionario(substituto);
@@ -362,8 +356,7 @@ public class FuncionarioService {
     }
 
     public boolean verificarDisponibilidadeDoFuncionario(String barbeariaId, String funcionarioId, LocalDateTime dataHora) {
-        boolean pertenceABarbearia = funcionarioBarbeariaRepository
-                .existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId);
+        boolean pertenceABarbearia = funcionarioBarbeariaRepository.existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(funcionarioId, barbeariaId);
 
         if (!pertenceABarbearia) {
             return false;
@@ -383,30 +376,30 @@ public class FuncionarioService {
         validarFuncionarioExiste(funcionarioId);
 
         return funcionarioBarbeariaRepository.findByFuncionarioIdAndAtivoTrue(funcionarioId)
-                .stream()
-                .map(FuncionarioBarbearia::getBarbearia)
-                .map(this::converterBarbeariaParaResponseDTO)
-                .collect(Collectors.toList());
+            .stream()
+            .map(FuncionarioBarbearia::getBarbearia)
+            .map(this::converterBarbeariaParaResponseDTO)
+            .collect(Collectors.toList());
     }
 
     private BarbeariaResponseDTO converterBarbeariaParaResponseDTO(Barbearia barbearia) {
         return BarbeariaResponseDTO.builder()
-                .id(barbearia.getId())
-                .ownerId(barbearia.getOwner() != null ? barbearia.getOwner().getId() : null)
-                .ownerName(barbearia.getOwner() != null ? barbearia.getOwner().getName() : null)
-                .nome(barbearia.getNome())
-                .descricao(barbearia.getDescricao())
-                .logradouro(barbearia.getLogradouro())
-                .numero(barbearia.getNumero())
-                .bairro(barbearia.getBairro())
-                .cep(barbearia.getCep())
-                .cidade(barbearia.getCidade())
-                .uf(barbearia.getUf())
-                .imgUrl(barbearia.getImgUrl())
-                .telefone(barbearia.getTelefone())
-                .criadoEm(barbearia.getCriadoEm())
-                .atualizadoEm(barbearia.getAtualizadoEm())
-                .ativo(barbearia.getAtivo())
-                .build();
+            .id(barbearia.getId())
+            .ownerId(barbearia.getOwner() != null ? barbearia.getOwner().getId() : null)
+            .ownerName(barbearia.getOwner() != null ? barbearia.getOwner().getName() : null)
+            .nome(barbearia.getNome())
+            .descricao(barbearia.getDescricao())
+            .logradouro(barbearia.getLogradouro())
+            .numero(barbearia.getNumero())
+            .bairro(barbearia.getBairro())
+            .cep(barbearia.getCep())
+            .cidade(barbearia.getCidade())
+            .uf(barbearia.getUf())
+            .imgUrl(barbearia.getImgUrl())
+            .telefone(barbearia.getTelefone())
+            .criadoEm(barbearia.getCriadoEm())
+            .atualizadoEm(barbearia.getAtualizadoEm())
+            .ativo(barbearia.getAtivo())
+            .build();
     }
 }

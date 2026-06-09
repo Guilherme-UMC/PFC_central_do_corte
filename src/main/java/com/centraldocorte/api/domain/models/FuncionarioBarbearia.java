@@ -32,7 +32,6 @@ public class FuncionarioBarbearia {
     @Column(nullable = false)
     private Boolean ativo = true;
 
-    //ferias, folga
     @Column(nullable = false)
     private Boolean disponivel = true;
 

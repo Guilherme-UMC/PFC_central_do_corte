@@ -33,7 +33,6 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public DashboardMetricasDTO getMetricas(String barbeariaId) {
 
-        // Verificar se a barbearia existe
         barbeariaRepository.findById(barbeariaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Barbearia não encontrada: " + barbeariaId));
 
@@ -41,26 +40,21 @@ public class DashboardService {
         LocalDateTime inicioDoMes = agora.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime inicioDoAno = agora.withDayOfYear(1).withHour(0).withMinute(0).withSecond(0);
 
-        // Total de agendamentos
         Long totalAgendamentos = agendamentoRepository.countByBarbeariaId(barbeariaId);
         if (totalAgendamentos == null) totalAgendamentos = 0L;
 
-        // Agendamentos do mês atual
         Long agendamentosMes = agendamentoRepository.countByBarbeariaIdAndDataHoraBetween(
                 barbeariaId, inicioDoMes, agora);
         if (agendamentosMes == null) agendamentosMes = 0L;
 
-        // Agendamentos CONCLUÍDOS no total
         Long agendamentosConcluidos = agendamentoRepository.countByBarbeariaIdAndStatus(
                 barbeariaId, StatusAgendamento.CONCLUIDO);
         if (agendamentosConcluidos == null) agendamentosConcluidos = 0L;
 
-        // Taxa de conclusão
         Double taxaConclusao = totalAgendamentos > 0
                 ? (agendamentosConcluidos.doubleValue() / totalAgendamentos.doubleValue()) * 100
                 : 0.0;
 
-        // FATURAMENTO DO MÊS (da tabela de resumo)
         Integer anoAtual = agora.getYear();
         Integer mesAtual = agora.getMonthValue();
 
@@ -68,23 +62,19 @@ public class DashboardService {
                 barbeariaId, anoAtual, mesAtual);
         if (faturamentoMes == null) faturamentoMes = BigDecimal.ZERO;
 
-        // FATURAMENTO DO ANO
         BigDecimal faturamentoAno = faturamentoMensalRepository.findTotalFaturamentoAno(barbeariaId, anoAtual);
         if (faturamentoAno == null) faturamentoAno = BigDecimal.ZERO;
 
-        // Clientes atendidos (clientes distintos com agendamentos CONCLUÍDOS)
         Long clientesAtendidos = agendamentoRepository.countDistinctClientesByBarbeariaIdAndStatus(
                 barbeariaId, StatusAgendamento.CONCLUIDO);
         if (clientesAtendidos == null) clientesAtendidos = 0L;
 
-        // Cancelamentos
         Long cancelamentos = agendamentoRepository.countByBarbeariaIdAndStatusIn(
                 barbeariaId,
                 List.of(StatusAgendamento.CANCELADO_PELO_CLIENTE, StatusAgendamento.CANCELADO_PELA_BARBEARIA)
         );
         if (cancelamentos == null) cancelamentos = 0L;
 
-        // Serviços realizados (agendamentos CONCLUÍDOS)
         Long servicosRealizados = agendamentoRepository.countByBarbeariaIdAndStatus(
                 barbeariaId, StatusAgendamento.CONCLUIDO);
         if (servicosRealizados == null) servicosRealizados = 0L;
@@ -106,7 +96,6 @@ public class DashboardService {
     public GraficoDTO getAgendamentosPorPeriodo(String barbeariaId, String periodo) {
 
 
-
         List<String> labels = new ArrayList<>();
         List<Long> valores = new ArrayList<>();
         LocalDateTime agora = LocalDateTime.now();
@@ -114,7 +103,6 @@ public class DashboardService {
         switch (periodo.toLowerCase()) {
             case "semana":
 
-                // Últimos 7 dias (de hoje até 6 dias atrás)
                 for (int i = 6; i >= 0; i--) {
                     LocalDate data = LocalDate.now().minusDays(i);
                     String nomeDia = data.getDayOfWeek().getDisplayName(TextStyle.SHORT, new Locale("pt", "BR"));
@@ -131,7 +119,6 @@ public class DashboardService {
 
             case "mes":
 
-                // Últimas 4 semanas
                 for (int i = 3; i >= 0; i--) {
                     LocalDate inicioSemana = LocalDate.now().minusWeeks(i).with(java.time.DayOfWeek.MONDAY);
                     LocalDate fimSemana = inicioSemana.plusDays(6);
@@ -157,7 +144,6 @@ public class DashboardService {
 
             case "ano":
 
-                // Últimos 12 meses
                 for (int i = 11; i >= 0; i--) {
                     LocalDate data = LocalDate.now().minusMonths(i);
                     String nomeMes = data.getMonth().getDisplayName(TextStyle.SHORT, new Locale("pt", "BR"));
@@ -175,7 +161,6 @@ public class DashboardService {
 
             default:
 
-                // Padrão: últimas 4 semanas
                 for (int i = 3; i >= 0; i--) {
                     LocalDate inicioSemana = LocalDate.now().minusWeeks(i).with(java.time.DayOfWeek.MONDAY);
                     LocalDate fimSemana = inicioSemana.plusDays(6);
@@ -189,8 +174,6 @@ public class DashboardService {
                 }
                 break;
         }
-
-
 
         return GraficoDTO.builder()
                 .labels(labels)

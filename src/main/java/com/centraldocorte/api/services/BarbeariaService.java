@@ -24,7 +24,7 @@ import java.util.Map;
 public class BarbeariaService {
 
     private final BarbeariaRepository barbeariaRepository;
-    private final HorarioFuncionamentoRepository horarioRepository; // Mantenha se usar em outros métodos
+    private final HorarioFuncionamentoRepository horarioRepository;
 
     @Transactional
     public BarbeariaResponseDTO criarBarbearia(BarbeariaRequestDTO request, Usuario proprietario) {
@@ -32,12 +32,9 @@ public class BarbeariaService {
         barbearia.setOwner(proprietario);
         Barbearia barbeariaSalva = barbeariaRepository.save(barbearia);
 
-        // ⚠️ NÃO CRIAR HORÁRIOS AQUI - Eles já vêm da migration ou trigger
-
         return converterParaResponseDTO(barbeariaSalva);
     }
 
-    // ========== RESTANTE DO CÓDIGO (mantenha o que você já tem) ==========
 
     @Transactional(readOnly = true)
     public Page<BarbeariaResponseDTO> listarBarbeariasAtivas(Pageable pageable) {
@@ -199,22 +196,22 @@ public class BarbeariaService {
 
     private BarbeariaResponseDTO converterParaResponseDTO(Barbearia barbearia) {
         return BarbeariaResponseDTO.builder()
-                .id(barbearia.getId())
-                .ownerId(barbearia.getOwner() != null ? barbearia.getOwner().getId() : null)
-                .ownerName(barbearia.getOwner() != null ? barbearia.getOwner().getName() : null)
-                .nome(barbearia.getNome())
-                .descricao(barbearia.getDescricao())
-                .logradouro(barbearia.getLogradouro())
-                .numero(barbearia.getNumero())
-                .bairro(barbearia.getBairro())
-                .cep(barbearia.getCep())
-                .cidade(barbearia.getCidade())
-                .uf(barbearia.getUf())
-                .imgUrl(barbearia.getImgUrl())
-                .telefone(barbearia.getTelefone())
-                .criadoEm(barbearia.getCriadoEm())
-                .atualizadoEm(barbearia.getAtualizadoEm())
-                .ativo(barbearia.getAtivo())
-                .build();
+            .id(barbearia.getId())
+            .ownerId(barbearia.getOwner() != null ? barbearia.getOwner().getId() : null)
+            .ownerName(barbearia.getOwner() != null ? barbearia.getOwner().getName() : null)
+            .nome(barbearia.getNome())
+            .descricao(barbearia.getDescricao())
+            .logradouro(barbearia.getLogradouro())
+            .numero(barbearia.getNumero())
+            .bairro(barbearia.getBairro())
+            .cep(barbearia.getCep())
+            .cidade(barbearia.getCidade())
+            .uf(barbearia.getUf())
+            .imgUrl(barbearia.getImgUrl())
+            .telefone(barbearia.getTelefone())
+            .criadoEm(barbearia.getCriadoEm())
+            .atualizadoEm(barbearia.getAtualizadoEm())
+            .ativo(barbearia.getAtivo())
+            .build();
     }
 }
