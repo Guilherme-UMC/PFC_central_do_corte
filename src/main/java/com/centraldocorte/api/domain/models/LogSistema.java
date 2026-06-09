@@ -45,7 +45,7 @@ public class LogSistema {
     private String usuarioRole;
 
     @Column(name = "entidade")
-    private String entidade; // Nome da entidade afetada
+    private String entidade;
 
     @Column(name = "entidade_id")
     private String entidadeId;
@@ -54,7 +54,7 @@ public class LogSistema {
     private String descricao;
 
     @Column(name = "detalhes", length = 2000)
-    private String detalhes; // JSON com detalhes adicionais
+    private String detalhes;
 
     @Column(name = "ip_origem")
     private String ipOrigem;

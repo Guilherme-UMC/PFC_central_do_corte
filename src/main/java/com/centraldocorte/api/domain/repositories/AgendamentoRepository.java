@@ -14,7 +14,6 @@ import java.util.List;
 @Repository
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
 
-    // ========== MÉTODOS EXISTENTES ==========
 
     List<Agendamento> findByBarbeariaIdOrderByDataHoraDesc(String barbeariaId);
     List<Agendamento> findByClienteIdOrderByDataHoraDesc(String clienteId);
@@ -69,18 +68,13 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
             @Param("agora") LocalDateTime agora,
             @Param("statusesIgnorados") List<StatusAgendamento> statusesIgnorados);
 
-    // ========== MÉTODOS PARA DASHBOARD ==========
 
-    // Contar total de agendamentos por barbearia
     Long countByBarbeariaId(String barbeariaId);
 
-    // Contar agendamentos em um período
     Long countByBarbeariaIdAndDataHoraBetween(String barbeariaId, LocalDateTime inicio, LocalDateTime fim);
 
-    // Contar agendamentos por status
     Long countByBarbeariaIdAndStatus(String barbeariaId, StatusAgendamento status);
 
-    // Contar agendamentos por status e período
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.status = :status AND a.dataHora BETWEEN :inicio AND :fim")
     Long countByBarbeariaIdAndStatusAndDataHoraBetween(
             @Param("barbeariaId") String barbeariaId,
@@ -88,18 +82,15 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
             @Param("inicio") LocalDateTime inicio,
             @Param("fim") LocalDateTime fim);
 
-    // Contar agendamentos por lista de status
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.status IN :status")
     Long countByBarbeariaIdAndStatusIn(
             @Param("barbeariaId") String barbeariaId,
             @Param("status") List<StatusAgendamento> status);
 
-    // Contar clientes distintos atendidos
     @Query("SELECT COUNT(DISTINCT a.cliente.id) FROM Agendamento a WHERE a.barbearia.id = :barbeariaId AND a.status = :status")
     Long countDistinctClientesByBarbeariaIdAndStatus(
             @Param("barbeariaId") String barbeariaId,
             @Param("status") StatusAgendamento status);
 
-    // Verificar se funcionário tem agendamento em um horário
     boolean existsByFuncionarioIdAndDataHoraBetween(String funcionarioId, LocalDateTime inicio, LocalDateTime fim);
 }

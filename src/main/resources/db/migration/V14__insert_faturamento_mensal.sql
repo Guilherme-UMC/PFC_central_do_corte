@@ -1,6 +1,3 @@
--- V14__insert_faturamento_mensal.sql
--- Popular a tabela de faturamento mensal com dados existentes (apenas CONCLUÍDOS)
-
 INSERT INTO faturamento_mensal (barbearia_id, ano, mes, valor_total, total_agendamentos)
 SELECT
     a.barbearia_id,

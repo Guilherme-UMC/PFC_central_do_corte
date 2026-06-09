@@ -150,7 +150,6 @@ public class UsuarioService {
         atualizarCamposDoUsuario(usuario, request);
         usuario = usuarioRepository.save(usuario);
 
-        // Registrar log de atualização
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("id", id);
         detalhes.put("emailAntigo", emailAntigo);
@@ -196,7 +195,6 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
         log.info("Usuário {} foi removido permanentemente", emailRemovido);
 
-        // Registrar log de remoção
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("id", id);
         detalhes.put("emailRemovido", emailRemovido);
@@ -240,7 +238,6 @@ public class UsuarioService {
 
         log.info("Status do usuário {} alterado para: {}", usuario.getEmail(), usuario.isActive());
 
-        // Registrar log de alteração de status
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("id", id);
         detalhes.put("email", usuario.getEmail());
@@ -248,13 +245,13 @@ public class UsuarioService {
         detalhes.put("statusNovo", statusNovo);
 
         logSistemaService.registrarLog(
-                "USUARIO",
-                "STATUS_ALTERADO",
-                "Usuario",
-                id,
-                String.format("Status do usuário %s alterado de %s para %s", usuario.getEmail(), statusAntigo, statusNovo),
-                detalhes,
-                httpRequest
+            "USUARIO",
+            "STATUS_ALTERADO",
+            "Usuario",
+            id,
+            String.format("Status do usuário %s alterado de %s para %s", usuario.getEmail(), statusAntigo, statusNovo),
+            detalhes,
+            httpRequest
         );
     }
 
@@ -271,19 +268,18 @@ public class UsuarioService {
         usuario.setPassword(passwordEncoder.encode(novaSenha));
         usuarioRepository.save(usuario);
 
-        // Registrar log de alteração de senha
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("id", id);
         detalhes.put("email", usuario.getEmail());
 
         logSistemaService.registrarLog(
-                "USUARIO",
-                "SENHA_ALTERADA",
-                "Usuario",
-                id,
-                String.format("Senha do usuário %s foi alterada", usuario.getEmail()),
-                detalhes,
-                httpRequest
+            "USUARIO",
+            "SENHA_ALTERADA",
+            "Usuario",
+            id,
+            String.format("Senha do usuário %s foi alterada", usuario.getEmail()),
+            detalhes,
+            httpRequest
         );
     }
 
@@ -296,7 +292,6 @@ public class UsuarioService {
         usuario.setRole(novaRole);
         usuario = usuarioRepository.save(usuario);
 
-        // Registrar log de alteração de role
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("id", id);
         detalhes.put("email", usuario.getEmail());

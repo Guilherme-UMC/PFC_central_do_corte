@@ -17,7 +17,6 @@ public class AgendamentoResponseDTO {
     private Double servicoPreco;
     private Integer servicoDuracao;
 
-    // ✅ Campos do funcionário
     private String funcionarioId;
     private String funcionarioNome;
 

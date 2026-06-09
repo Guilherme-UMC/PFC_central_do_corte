@@ -42,7 +42,6 @@ public class AuthService {
             String accessToken = tokenService.gerarAccessToken(usuario);
             String refreshToken = tokenService.gerarRefreshToken(usuario);
 
-            // Registrar log de login
             Map<String, Object> detalhes = new HashMap<>();
             detalhes.put("email", usuario.getEmail());
             detalhes.put("role", usuario.getRole().name());
@@ -66,7 +65,6 @@ public class AuthService {
                     "Login realizado com sucesso"
             );
         } catch (BadCredentialsException e) {
-            // Tentativa de login falha - também registrar
             Map<String, Object> detalhes = new HashMap<>();
             detalhes.put("email", request.email());
 
@@ -90,7 +88,6 @@ public class AuthService {
         Usuario novoUsuario = criarUsuarioAPartirDoRequest(request, role);
         usuarioRepository.save(novoUsuario);
 
-        // Registrar log de criação de usuário
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("email", novoUsuario.getEmail());
         detalhes.put("role", novoUsuario.getRole().name());
@@ -139,7 +136,6 @@ public class AuthService {
         );
     }
 
-    // Método para registrar logout
     public void registrarLogout(HttpServletRequest httpRequest) {
         try {
             String email = SecurityContextHolder.getContext().getAuthentication().getName();

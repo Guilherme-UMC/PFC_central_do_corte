@@ -10,12 +10,9 @@ import java.util.Optional;
 @Repository
 public interface HorarioFuncionamentoRepository extends JpaRepository<HorarioFuncionamento, Long> {
 
-    // CORRIGIDO: Long → String
     List<HorarioFuncionamento> findByBarbeariaIdOrderByDia(String barbeariaId);
 
-    // CORRIGIDO: Long → String
     Optional<HorarioFuncionamento> findByBarbeariaIdAndDia(String barbeariaId, DiaSemana dia);
 
-    // CORRIGIDO: Long → String
     void deleteByBarbeariaId(String barbeariaId);
 }

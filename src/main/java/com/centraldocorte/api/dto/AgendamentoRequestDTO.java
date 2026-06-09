@@ -18,7 +18,6 @@ public class AgendamentoRequestDTO {
     @NotNull(message = "ID do serviço é obrigatório")
     private String servicoId;
 
-    // ID do funcionário (opcional)
     private String funcionarioId;
 
     @NotNull(message = "Data e hora são obrigatórias")

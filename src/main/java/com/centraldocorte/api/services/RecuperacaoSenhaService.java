@@ -73,7 +73,7 @@ public class RecuperacaoSenhaService {
 
     public boolean validarToken(String token) {
         return tokenRepository.findByTokenAndUtilizadoFalse(token)
-                .map(t -> !t.isExpirado())
-                .orElse(false);
+            .map(t -> !t.isExpirado())
+            .orElse(false);
     }
 }

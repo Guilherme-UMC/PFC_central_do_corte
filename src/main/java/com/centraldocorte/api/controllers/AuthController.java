@@ -37,7 +37,7 @@ public class AuthController {
     })
     public ResponseEntity<LoginResponseDTO> autenticarUsuario(
             @Valid @RequestBody LoginRequestDTO request,
-            HttpServletRequest httpRequest) {  // ADICIONADO
+            HttpServletRequest httpRequest) {
         return ResponseEntity.ok(authService.autenticarUsuario(request, httpRequest));
     }
 
@@ -50,7 +50,7 @@ public class AuthController {
     })
     public ResponseEntity<RegisterResponseDTO> registrarCliente(
             @Valid @RequestBody RegisterRequestDTO request,
-            HttpServletRequest httpRequest) {  // ADICIONADO
+            HttpServletRequest httpRequest) {
         return ResponseEntity.ok(authService.registrarUsuario(request, UsuarioRole.ROLE_CLIENTE, httpRequest));
     }
 
@@ -64,7 +64,7 @@ public class AuthController {
     })
     public ResponseEntity<RegisterResponseDTO> registrarProprietarioDeBarbearia(
             @Valid @RequestBody RegisterRequestDTO request,
-            HttpServletRequest httpRequest) {  // ADICIONADO
+            HttpServletRequest httpRequest) {
         return ResponseEntity.ok(authService.registrarUsuario(request, UsuarioRole.ROLE_BARBEARIA_ADM, httpRequest));
     }
 
@@ -80,12 +80,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.renovarToken(token));
     }
 
-    // Endpoint para registrar logout (opcional)
+
     @PostMapping("/logout")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Logout", description = "Registra o logout do usuário")
     public ResponseEntity<Void> logout(HttpServletRequest httpRequest) {
-        // O service vai pegar o usuário autenticado pelo SecurityContext
+
         authService.registrarLogout(httpRequest);
         return ResponseEntity.ok().build();
     }
