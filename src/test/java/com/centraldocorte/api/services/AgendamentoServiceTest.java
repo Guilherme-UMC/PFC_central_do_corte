@@ -1,313 +1,194 @@
-//package com.centraldocorte.api.services;
-//
-//import com.centraldocorte.api.domain.models.*;
-//import com.centraldocorte.api.domain.models.enums.StatusAgendamento;
-//import com.centraldocorte.api.domain.models.enums.UsuarioRole;
-//import com.centraldocorte.api.domain.repositories.*;
-//import com.centraldocorte.api.dto.AgendamentoRequestDTO;
-//import com.centraldocorte.api.dto.AgendamentoResponseDTO;
-//import com.centraldocorte.api.exception.BusinessException;
-//import com.centraldocorte.api.exception.ResourceNotFoundException;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.DisplayName;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//import org.mockito.InjectMocks;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//
-//import java.math.BigDecimal;
-//import java.time.LocalDateTime;
-//import java.util.Collections;
-//import java.util.List;
-//import java.util.Optional;
-//
-//import static org.assertj.core.api.Assertions.*;
-//import static org.mockito.ArgumentMatchers.*;
-//import static org.mockito.Mockito.*;
-//
-//@ExtendWith(MockitoExtension.class)
-//@DisplayName("AgendamentoService - Testes Unitários")
-//class AgendamentoServiceTest {
-//
-//    @Mock
-//    private AgendamentoRepository agendamentoRepository;
-//
-//    @Mock
-//    private UsuarioRepository usuarioRepository;
-//
-//    @Mock
-//    private BarbeariaRepository barbeariaRepository;
-//
-//    @Mock
-//    private ServicoRepository servicoRepository;
-//
-//    @Mock
-//    private FuncionarioBarbeariaRepository funcionarioBarbeariaRepository;
-//
-//    @Mock
-//    private HorarioService horarioFuncionamentoService;
-//
-//    @InjectMocks
-//    private AgendamentoService agendamentoService;
-//
-//    private Usuario clientePadrao;
-//    private Usuario funcionarioPadrao;
-//    private Barbearia barbeariaPadrao;
-//    private Servico servicoPadrao;
-//    private AgendamentoRequestDTO requestPadrao;
-//
-//    @BeforeEach
-//    void configurarCenarioBase() {
-//        clientePadrao = criarCliente("cliente-1", "João Silva");
-//        funcionarioPadrao = criarFuncionario("funcionario-1", "Pedro Barbeiro");
-//        barbeariaPadrao = criarBarbearia("barbearia-1", "Barbearia do Ze");
-//        servicoPadrao = criarServico("servico-1", "Corte Simples", BigDecimal.valueOf(30), 30);
-//
-//        requestPadrao = new AgendamentoRequestDTO();
-//        requestPadrao.setDataHora(LocalDateTime.now().plusDays(1));
-//        requestPadrao.setBarbeariaId("barbearia-1");
-//        requestPadrao.setFuncionarioId("funcionario-1");
-//        requestPadrao.setServicosIds(List.of("servico-1"));
-//    }
-//
-//    @Test
-//    @DisplayName("Deve criar agendamento com sucesso quando todos os dados são válidos")
-//    void deveCriarAgendamentoComSucesso() {
-//        configurarMocksParaCenarioSucesso();
-//
-//        Agendamento agendamentoEsperado = new Agendamento();
-//        when(agendamentoRepository.save(any(Agendamento.class))).thenReturn(agendamentoEsperado);
-//
-//        Agendamento resultado = agendamentoService.criarAgendamento("cliente-1", requestPadrao);
-//
-//        assertThat(resultado).isNotNull();
-//        verify(agendamentoRepository, times(1)).save(any(Agendamento.class));
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar ResourceNotFoundException quando cliente não é encontrado")
-//    void deveLancarExcecaoQuandoClienteNaoExiste() {
-//        when(usuarioRepository.findById("cliente-inexistente")).thenReturn(Optional.empty());
-//
-//        assertThatThrownBy(() -> agendamentoService.criarAgendamento("cliente-inexistente", requestPadrao))
-//                .isInstanceOf(ResourceNotFoundException.class)
-//                .hasMessageContaining("Cliente não encontrado");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar ResourceNotFoundException quando barbearia não é encontrada")
-//    void deveLancarExcecaoQuandoBarbeariaNaoExiste() {
-//        when(usuarioRepository.findById("cliente-1")).thenReturn(Optional.of(clientePadrao));
-//        when(barbeariaRepository.findById("barbearia-1")).thenReturn(Optional.empty());
-//
-//        assertThatThrownBy(() -> agendamentoService.criarAgendamento("cliente-1", requestPadrao))
-//                .isInstanceOf(ResourceNotFoundException.class)
-//                .hasMessageContaining("Barbearia não encontrada");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar ResourceNotFoundException quando funcionário não é encontrado")
-//    void deveLancarExcecaoQuandoFuncionarioNaoExiste() {
-//        when(usuarioRepository.findById("cliente-1")).thenReturn(Optional.of(clientePadrao));
-//        when(barbeariaRepository.findById("barbearia-1")).thenReturn(Optional.of(barbeariaPadrao));
-//        when(usuarioRepository.findById("funcionario-1")).thenReturn(Optional.empty());
-//
-//        assertThatThrownBy(() -> agendamentoService.criarAgendamento("cliente-1", requestPadrao))
-//                .isInstanceOf(ResourceNotFoundException.class)
-//                .hasMessageContaining("Funcionário não encontrado");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar BusinessException quando funcionário não pertence à barbearia")
-//    void deveLancarExcecaoQuandoFuncionarioNaoPertenceABarbearia() {
-//        when(usuarioRepository.findById("cliente-1")).thenReturn(Optional.of(clientePadrao));
-//        when(barbeariaRepository.findById("barbearia-1")).thenReturn(Optional.of(barbeariaPadrao));
-//        when(usuarioRepository.findById("funcionario-1")).thenReturn(Optional.of(funcionarioPadrao));
-//        when(funcionarioBarbeariaRepository.existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(anyString(), anyString()))
-//                .thenReturn(false);
-//
-//        assertThatThrownBy(() -> agendamentoService.criarAgendamento("cliente-1", requestPadrao))
-//                .isInstanceOf(BusinessException.class)
-//                .hasMessageContaining("Funcionário não pertence a esta barbearia");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar BusinessException quando horário está fora do expediente")
-//    void deveLancarExcecaoQuandoHorarioForaDoExpediente() {
-//        when(usuarioRepository.findById("cliente-1")).thenReturn(Optional.of(clientePadrao));
-//        when(barbeariaRepository.findById("barbearia-1")).thenReturn(Optional.of(barbeariaPadrao));
-//        when(usuarioRepository.findById("funcionario-1")).thenReturn(Optional.of(funcionarioPadrao));
-//        when(funcionarioBarbeariaRepository.existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(anyString(), anyString()))
-//                .thenReturn(true);
-//        when(horarioFuncionamentoService.isHorarioValido(anyString(), any(), any())).thenReturn(false);
-//
-//        assertThatThrownBy(() -> agendamentoService.criarAgendamento("cliente-1", requestPadrao))
-//                .isInstanceOf(BusinessException.class)
-//                .hasMessageContaining("Horário fora do expediente");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar BusinessException quando nenhum serviço válido é encontrado")
-//    void deveLancarExcecaoQuandoNenhumServicoValido() {
-//        when(usuarioRepository.findById("cliente-1")).thenReturn(Optional.of(clientePadrao));
-//        when(barbeariaRepository.findById("barbearia-1")).thenReturn(Optional.of(barbeariaPadrao));
-//        when(usuarioRepository.findById("funcionario-1")).thenReturn(Optional.of(funcionarioPadrao));
-//        when(funcionarioBarbeariaRepository.existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(anyString(), anyString()))
-//                .thenReturn(true);
-//        when(horarioFuncionamentoService.isHorarioValido(anyString(), any(), any())).thenReturn(true);
-//        when(servicoRepository.findAllById(anyList())).thenReturn(Collections.emptyList());
-//
-//        assertThatThrownBy(() -> agendamentoService.criarAgendamento("cliente-1", requestPadrao))
-//                .isInstanceOf(BusinessException.class)
-//                .hasMessageContaining("Nenhum serviço válido encontrado");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar BusinessException quando há conflito de horário com outro agendamento")
-//    void deveLancarExcecaoQuandoFuncionarioJaPossuiAgendamento() {
-//        configurarMocksParaCenarioSucesso();
-//
-//        Agendamento agendamentoExistente = new Agendamento();
-//        when(agendamentoRepository.findByFuncionarioIdAndDataHoraBetween(anyString(), any(), any()))
-//                .thenReturn(List.of(agendamentoExistente));
-//
-//        assertThatThrownBy(() -> agendamentoService.criarAgendamento("cliente-1", requestPadrao))
-//                .isInstanceOf(BusinessException.class)
-//                .hasMessageContaining("Funcionário já possui agendamento neste horário");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve retornar lista de agendamentos do cliente ordenados por data")
-//    void deveListarAgendamentosDoCliente() {
-//        Agendamento agendamento = montarAgendamentoCompleto();
-//        when(agendamentoRepository.findByClienteIdOrderByDataHoraDesc("cliente-1"))
-//                .thenReturn(List.of(agendamento));
-//
-//        List<AgendamentoResponseDTO> resultado = agendamentoService.listarAgendamentosCliente("cliente-1");
-//
-//        assertThat(resultado).hasSize(1);
-//        assertThat(resultado.get(0).getClienteNome()).isEqualTo("João Silva");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve retornar lista vazia quando cliente não possui agendamentos")
-//    void deveRetornarListaVaziaQuandoClienteSemAgendamentos() {
-//        when(agendamentoRepository.findByClienteIdOrderByDataHoraDesc("cliente-1"))
-//                .thenReturn(Collections.emptyList());
-//
-//        List<AgendamentoResponseDTO> resultado = agendamentoService.listarAgendamentosCliente("cliente-1");
-//
-//        assertThat(resultado).isEmpty();
-//    }
-//
-//    @Test
-//    @DisplayName("Deve retornar lista de agendamentos da barbearia ordenados por data")
-//    void deveListarAgendamentosDaBarbearia() {
-//        Agendamento agendamento = montarAgendamentoCompleto();
-//        when(agendamentoRepository.findByBarbeariaIdOrderByDataHoraAsc("barbearia-1"))
-//                .thenReturn(List.of(agendamento));
-//
-//        List<AgendamentoResponseDTO> resultado = agendamentoService.listarAgendamentosBarbearia("barbearia-1");
-//
-//        assertThat(resultado).hasSize(1);
-//        assertThat(resultado.get(0).getBarbeariaNome()).isEqualTo("Barbearia do Ze");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve atualizar o status do agendamento para CONFIRMADO com sucesso")
-//    void deveAtualizarStatusParaConfirmado() {
-//        Agendamento agendamento = new Agendamento();
-//        agendamento.setStatus(StatusAgendamento.PENDENTE);
-//        when(agendamentoRepository.findById("agendamento-1")).thenReturn(Optional.of(agendamento));
-//        when(agendamentoRepository.save(any())).thenReturn(agendamento);
-//
-//        Agendamento resultado = agendamentoService.atualizarStatusAgendamento("agendamento-1", "CONFIRMADO");
-//
-//        assertThat(resultado.getStatus()).isEqualTo(StatusAgendamento.CONFIRMADO);
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar BusinessException quando status informado é inválido")
-//    void deveLancarExcecaoQuandoStatusInvalido() {
-//        Agendamento agendamento = new Agendamento();
-//        when(agendamentoRepository.findById("agendamento-1")).thenReturn(Optional.of(agendamento));
-//
-//        assertThatThrownBy(() -> agendamentoService.atualizarStatusAgendamento("agendamento-1", "STATUS_INVALIDO"))
-//                .isInstanceOf(BusinessException.class)
-//                .hasMessageContaining("Status inválido");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar ResourceNotFoundException quando agendamento não é encontrado para atualizar")
-//    void deveLancarExcecaoQuandoAgendamentoNaoEncontrado() {
-//        when(agendamentoRepository.findById("agendamento-inexistente")).thenReturn(Optional.empty());
-//
-//        assertThatThrownBy(() ->
-//                agendamentoService.atualizarStatusAgendamento("agendamento-inexistente", "CONFIRMADO"))
-//                .isInstanceOf(ResourceNotFoundException.class)
-//                .hasMessageContaining("Agendamento não encontrado");
-//    }
-//
-//    private void configurarMocksParaCenarioSucesso() {
-//        when(usuarioRepository.findById("cliente-1")).thenReturn(Optional.of(clientePadrao));
-//        when(barbeariaRepository.findById("barbearia-1")).thenReturn(Optional.of(barbeariaPadrao));
-//        when(usuarioRepository.findById("funcionario-1")).thenReturn(Optional.of(funcionarioPadrao));
-//        when(funcionarioBarbeariaRepository.existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(anyString(), anyString()))
-//                .thenReturn(true);
-//        when(horarioFuncionamentoService.isHorarioValido(anyString(), any(), any())).thenReturn(true);
-//        when(servicoRepository.findAllById(anyList())).thenReturn(List.of(servicoPadrao));
-//        when(agendamentoRepository.findByFuncionarioIdAndDataHoraBetween(anyString(), any(), any()))
-//                .thenReturn(Collections.emptyList());
-//    }
-//
-//    private Agendamento montarAgendamentoCompleto() {
-//        Agendamento agendamento = new Agendamento();
-//        agendamento.setId("agendamento-1");
-//        agendamento.setCliente(clientePadrao);
-//        agendamento.setBarbearia(barbeariaPadrao);
-//        agendamento.setFuncionario(funcionarioPadrao);
-//        agendamento.setDataHora(LocalDateTime.now().plusDays(1));
-//        agendamento.setStatus(StatusAgendamento.PENDENTE);
-//        agendamento.setServicos(List.of(servicoPadrao));
-//        agendamento.setCriadoEm(LocalDateTime.now());
-//        return agendamento;
-//    }
-//
-//    private Usuario criarCliente(String id, String nome) {
-//        Usuario usuario = new Usuario();
-//        usuario.setId(id);
-//        usuario.setName(nome);
-//        usuario.setEmail(nome.toLowerCase().replace(" ", ".") + "@email.com");
-//        usuario.setRole(UsuarioRole.ROLE_CLIENTE);
-//        usuario.setActive(true);
-//        return usuario;
-//    }
-//
-//    private Usuario criarFuncionario(String id, String nome) {
-//        Usuario usuario = new Usuario();
-//        usuario.setId(id);
-//        usuario.setName(nome);
-//        usuario.setRole(UsuarioRole.ROLE_FUNCIONARIO);
-//        usuario.setActive(true);
-//        return usuario;
-//    }
-//
-//    private Barbearia criarBarbearia(String id, String nome) {
-//        Barbearia barbearia = new Barbearia();
-//        barbearia.setId(id);
-//        barbearia.setNome(nome);
-//        barbearia.setAtivo(true);
-//        return barbearia;
-//    }
-//
-//    private Servico criarServico(String id, String nome, BigDecimal preco, int duracaoMinutos) {
-//        Servico servico = new Servico();
-//        servico.setId(id);
-//        servico.setNome(nome);
-//        servico.setPreco(preco);
-//        servico.setDuracaoMinutos(duracaoMinutos);
-//        servico.setBarbearia(barbeariaPadrao);
-//        return servico;
-//    }
-//}
+package com.centraldocorte.api.services;
+
+import com.centraldocorte.api.domain.models.*;
+import com.centraldocorte.api.domain.models.enums.*;
+import com.centraldocorte.api.domain.repositories.*;
+import com.centraldocorte.api.dto.AgendamentoRequestDTO;
+import com.centraldocorte.api.dto.AgendamentoResponseDTO;
+import com.centraldocorte.api.exception.BusinessException;
+import com.centraldocorte.api.exception.ResourceNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("Testes Unitários - AgendamentoService")
+class AgendamentoServiceTest {
+
+    @Mock private AgendamentoRepository agendamentoRepository;
+    @Mock private BarbeariaRepository barbeariaRepository;
+    @Mock private ServicoRepository servicoRepository;
+    @Mock private UsuarioRepository usuarioRepository;
+    @Mock private FuncionarioBarbeariaRepository funcionarioBarbeariaRepository;
+    @Mock private HorarioService horarioService;
+    @Mock private DisponibilidadeService disponibilidadeService;
+    @Mock private LogSistemaService logSistemaService;
+    @Mock private HttpServletRequest httpRequest;
+
+    @InjectMocks
+    private AgendamentoService agendamentoService;
+
+    private Usuario clienteAutenticado;
+    private Usuario funcionario;
+    private Usuario owner;
+    private Barbearia barbeariaAtiva;
+    private Servico servico;
+
+    @BeforeEach
+    void setUp() {
+        clienteAutenticado = new Usuario();
+        clienteAutenticado.setId("cliente-123");
+        clienteAutenticado.setEmail("cliente@teste.com");
+        clienteAutenticado.setName("Cliente Teste");
+        clienteAutenticado.setRole(UsuarioRole.ROLE_CLIENTE);
+        clienteAutenticado.setActive(true);
+
+        funcionario = new Usuario();
+        funcionario.setId("func-456");
+        funcionario.setName("Barbeiro João");
+        funcionario.setRole(UsuarioRole.ROLE_FUNCIONARIO);
+        funcionario.setActive(true);
+
+        owner = new Usuario();
+        owner.setId("owner-789");
+        owner.setName("Proprietário");
+        owner.setRole(UsuarioRole.ROLE_BARBEARIA_ADM);
+        owner.setActive(true);
+
+        barbeariaAtiva = new Barbearia();
+        barbeariaAtiva.setId("barb-001");
+        barbeariaAtiva.setNome("Barbearia Teste");
+        barbeariaAtiva.setAtivo(true);
+        barbeariaAtiva.setOwner(owner);
+
+        servico = new Servico();
+        servico.setId("serv-001");
+        servico.setNome("Corte de Cabelo");
+        servico.setPreco(BigDecimal.valueOf(50.0));
+        servico.setDuracaoMinutos(30);
+        servico.setBarbearia(barbeariaAtiva);
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getName()).thenReturn("cliente@teste.com");
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(securityContext);
+    }
+
+    @Test
+    @DisplayName("Deve criar agendamento com sucesso quando funcionário específico for escolhido")
+    void deveCriarAgendamentoComFuncionarioEspecifico() {
+        when(usuarioRepository.findByEmail("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
+        when(barbeariaRepository.findById("barb-001")).thenReturn(Optional.of(barbeariaAtiva));
+        when(servicoRepository.findById("serv-001")).thenReturn(Optional.of(servico));
+        when(usuarioRepository.findById("func-456")).thenReturn(Optional.of(funcionario));
+        when(funcionarioBarbeariaRepository.existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(
+                eq("func-456"), eq("barb-001"))).thenReturn(true);
+        when(disponibilidadeService.isHorarioDisponivelParaFuncionario(eq("func-456"), any(LocalDateTime.class)))
+                .thenReturn(true);
+
+        Agendamento agendamentoSalvo = new Agendamento();
+        agendamentoSalvo.setId(1L);
+        agendamentoSalvo.setCliente(clienteAutenticado);
+        agendamentoSalvo.setBarbearia(barbeariaAtiva);
+        agendamentoSalvo.setServico(servico);
+        agendamentoSalvo.setFuncionario(funcionario);
+        agendamentoSalvo.setStatus(StatusAgendamento.PENDENTE);
+        agendamentoSalvo.setDataHora(LocalDateTime.now().plusDays(2));
+
+        when(agendamentoRepository.save(any(Agendamento.class))).thenReturn(agendamentoSalvo);
+
+        AgendamentoRequestDTO request = new AgendamentoRequestDTO();
+        request.setBarbeariaId("barb-001");
+        request.setServicoId("serv-001");
+        request.setFuncionarioId("func-456");
+        request.setDataHora(LocalDateTime.now().plusDays(2));
+        request.setObservacao("Prefiro horário pela manhã");
+
+        AgendamentoResponseDTO response = agendamentoService.criarAgendamento(request, httpRequest);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo(1L);
+        assertThat(response.getBarbeariaNome()).isEqualTo("Barbearia Teste");
+
+        verify(logSistemaService).registrarLog(eq("AGENDAMENTO"), eq("CRIADO"), any(), any(), any(), any(), eq(httpRequest));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção quando funcionário não pertence à barbearia")
+    void deveLancarExcecaoQuandoFuncionarioNaoPertenceABarbearia() {
+        when(usuarioRepository.findByEmail("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
+        when(barbeariaRepository.findById("barb-001")).thenReturn(Optional.of(barbeariaAtiva));
+        when(servicoRepository.findById("serv-001")).thenReturn(Optional.of(servico));
+        when(usuarioRepository.findById("func-456")).thenReturn(Optional.of(funcionario));
+        when(funcionarioBarbeariaRepository.existsByFuncionarioIdAndBarbeariaIdAndAtivoTrue(
+                eq("func-456"), eq("barb-001"))).thenReturn(false);
+
+        AgendamentoRequestDTO request = new AgendamentoRequestDTO();
+        request.setBarbeariaId("barb-001");
+        request.setServicoId("serv-001");
+        request.setFuncionarioId("func-456");
+        request.setDataHora(LocalDateTime.now().plusDays(2));
+
+        assertThatThrownBy(() -> agendamentoService.criarAgendamento(request, httpRequest))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Este funcionário não pertence à barbearia selecionada");
+    }
+
+    @Test
+    @DisplayName("Deve cancelar agendamento com sucesso")
+    void deveCancelarAgendamentoComSucesso() {
+        Agendamento agendamento = new Agendamento();
+        agendamento.setId(1L);
+        agendamento.setCliente(clienteAutenticado);
+        agendamento.setBarbearia(barbeariaAtiva);
+        agendamento.setServico(servico);
+        agendamento.setStatus(StatusAgendamento.PENDENTE);
+        agendamento.setDataHora(LocalDateTime.now().plusDays(2));
+
+        when(agendamentoRepository.findById(1L)).thenReturn(Optional.of(agendamento));
+        when(usuarioRepository.findByEmail("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
+        when(agendamentoRepository.save(any(Agendamento.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AgendamentoResponseDTO response = agendamentoService.cancelarAgendamento(1L, "Mudei de ideia", httpRequest);
+
+        assertThat(response).isNotNull();
+        assertThat(agendamento.getStatus()).isEqualTo(StatusAgendamento.CANCELADO_PELO_CLIENTE);
+
+        verify(logSistemaService).registrarLog(eq("AGENDAMENTO"), eq("CANCELADO"), any(), any(), any(), any(), eq(httpRequest));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao cancelar agendamento com menos de 24h")
+    void deveLancarExcecaoAoCancelarComMenosDe24h() {
+        Agendamento agendamento = new Agendamento();
+        agendamento.setId(1L);
+        agendamento.setCliente(clienteAutenticado);
+        agendamento.setBarbearia(barbeariaAtiva);
+        agendamento.setStatus(StatusAgendamento.PENDENTE);
+        agendamento.setDataHora(LocalDateTime.now().plusHours(12));
+
+        when(agendamentoRepository.findById(1L)).thenReturn(Optional.of(agendamento));
+        when(usuarioRepository.findByEmail("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
+
+        assertThatThrownBy(() -> agendamentoService.cancelarAgendamento(1L, "Motivo", httpRequest))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Cancelamentos devem ser feitos com pelo menos 24 horas de antecedência");
+    }
+}

@@ -1,176 +1,218 @@
-//package com.centraldocorte.api.services;
-//
-//import com.centraldocorte.api.domain.models.Usuario;
-//import com.centraldocorte.api.domain.models.enums.UsuarioRole;
-//import com.centraldocorte.api.domain.repositories.UsuarioRepository;
-//import com.centraldocorte.api.dto.LoginRequestDTO;
-//import com.centraldocorte.api.dto.LoginResponseDTO;
-//import com.centraldocorte.api.dto.RegisterRequestDTO;
-//import com.centraldocorte.api.dto.RegisterResponseDTO;
-//import com.centraldocorte.api.exception.BusinessException;
-//import com.centraldocorte.api.exception.ResourceNotFoundException;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.DisplayName;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.extension.ExtendWith;
-//import org.mockito.InjectMocks;
-//import org.mockito.Mock;
-//import org.mockito.junit.jupiter.MockitoExtension;
-//import org.springframework.security.authentication.AuthenticationManager;
-//import org.springframework.security.authentication.BadCredentialsException;
-//import org.springframework.security.core.Authentication;
-//import org.springframework.security.crypto.password.PasswordEncoder;
-//
-//import java.util.Optional;
-//
-//import static org.assertj.core.api.Assertions.*;
-//import static org.mockito.ArgumentMatchers.any;
-//import static org.mockito.ArgumentMatchers.anyString;
-//import static org.mockito.Mockito.*;
-//
-//@ExtendWith(MockitoExtension.class)
-//@DisplayName("AuthService - Testes Unitários")
-//class AuthServiceTest {
-//
-//    @Mock
-//    private AuthenticationManager authenticationManager;
-//
-//    @Mock
-//    private UsuarioRepository usuarioRepository;
-//
-//    @Mock
-//    private PasswordEncoder passwordEncoder;
-//
-//    @Mock
-//    private TokenService tokenService;
-//
-//    @InjectMocks
-//    private AuthService authService;
-//
-//    private Usuario usuarioPadrao;
-//
-//    @BeforeEach
-//    void configurarCenarioBase() {
-//        usuarioPadrao = new Usuario();
-//        usuarioPadrao.setId("usuario-1");
-//        usuarioPadrao.setName("João Silva");
-//        usuarioPadrao.setEmail("joao@email.com");
-//        usuarioPadrao.setPassword("senhaCodificada");
-//        usuarioPadrao.setRole(UsuarioRole.ROLE_CLIENTE);
-//        usuarioPadrao.setActive(true);
-//    }
-//
-//    @Test
-//    @DisplayName("Deve autenticar usuário e retornar token JWT com sucesso")
-//    void deveAutenticarUsuarioComSucesso() {
-//        Authentication autenticacaoMock = mock(Authentication.class);
-//        when(autenticacaoMock.getPrincipal()).thenReturn(usuarioPadrao);
-//        when(authenticationManager.authenticate(any())).thenReturn(autenticacaoMock);
-//        when(tokenService.gerarToken(usuarioPadrao)).thenReturn("token-jwt-gerado");
-//
-//        LoginRequestDTO request = new LoginRequestDTO("joao@email.com", "minhasenha");
-//        LoginResponseDTO resultado = authService.autenticarUsuario(request);
-//
-//        assertThat(resultado).isNotNull();
-//        assertThat(resultado.token()).isEqualTo("token-jwt-gerado");
-//        assertThat(resultado.name()).isEqualTo("João Silva");
-//        assertThat(resultado.role()).isEqualTo(UsuarioRole.ROLE_CLIENTE.name());
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar BusinessException quando credenciais são inválidas")
-//    void deveLancarExcecaoQuandoCredenciaisInvalidas() {
-//        when(authenticationManager.authenticate(any()))
-//                .thenThrow(new BadCredentialsException("Credenciais inválidas"));
-//
-//        LoginRequestDTO request = new LoginRequestDTO("errado@email.com", "senhaerrada");
-//
-//        assertThatThrownBy(() -> authService.autenticarUsuario(request))
-//                .isInstanceOf(BusinessException.class)
-//                .hasMessageContaining("Email ou senha inválidos");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve registrar novo usuário cliente com sucesso")
-//    void deveRegistrarClienteComSucesso() {
-//        when(usuarioRepository.existsByEmail("novo@email.com")).thenReturn(false);
-//        when(passwordEncoder.encode(anyString())).thenReturn("senhaCodificada");
-//        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
-//            Usuario u = invocation.getArgument(0);
-//            u.setId("novo-id");
-//            return u;
-//        });
-//
-//        RegisterRequestDTO request = new RegisterRequestDTO(
-//                "Maria Santos", "novo@email.com", "senha123", "11999998888");
-//
-//        RegisterResponseDTO resultado = authService.registrarUsuario(request, UsuarioRole.ROLE_CLIENTE);
-//
-//        assertThat(resultado).isNotNull();
-//        assertThat(resultado.email()).isEqualTo("novo@email.com");
-//        assertThat(resultado.role()).isEqualTo(UsuarioRole.ROLE_CLIENTE.name());
-//        assertThat(resultado.message()).contains("sucesso");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar BusinessException quando email já está cadastrado no registro")
-//    void deveLancarExcecaoQuandoEmailJaCadastradoNoRegistro() {
-//        when(usuarioRepository.existsByEmail("existente@email.com")).thenReturn(true);
-//
-//        RegisterRequestDTO request = new RegisterRequestDTO(
-//                "Fulano", "existente@email.com", "senha123", "11999998888");
-//
-//        assertThatThrownBy(() -> authService.registrarUsuario(request, UsuarioRole.ROLE_CLIENTE))
-//                .isInstanceOf(BusinessException.class)
-//                .hasMessageContaining("Email já cadastrado");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve registrar proprietário de barbearia com role correta")
-//    void deveRegistrarProprietarioDeBarbeariaComRoleCorreta() {
-//        when(usuarioRepository.existsByEmail(anyString())).thenReturn(false);
-//        when(passwordEncoder.encode(anyString())).thenReturn("senhaCodificada");
-//        when(usuarioRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-//
-//        RegisterRequestDTO request = new RegisterRequestDTO(
-//                "Carlos Dono", "carlos@barbearia.com", "senha123", "11988887777");
-//
-//        RegisterResponseDTO resultado = authService.registrarUsuario(request, UsuarioRole.ROLE_BARBEARIA_ADM);
-//
-//        assertThat(resultado.role()).isEqualTo(UsuarioRole.ROLE_BARBEARIA_ADM.name());
-//    }
-//
-//    @Test
-//    @DisplayName("Deve renovar token JWT com sucesso quando token é válido")
-//    void deveRenovarTokenComSucesso() {
-//        when(tokenService.validarToken("token-valido")).thenReturn("joao@email.com");
-//        when(usuarioRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(usuarioPadrao));
-//        when(tokenService.gerarToken(usuarioPadrao)).thenReturn("novo-token-jwt");
-//
-//        LoginResponseDTO resultado = authService.renovarToken("token-valido");
-//
-//        assertThat(resultado.token()).isEqualTo("novo-token-jwt");
-//        assertThat(resultado.message()).contains("renovado");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar BusinessException quando token para renovação é inválido ou expirado")
-//    void deveLancarExcecaoQuandoTokenParaRenovacaoEhInvalido() {
-//        when(tokenService.validarToken("token-invalido")).thenReturn(null);
-//
-//        assertThatThrownBy(() -> authService.renovarToken("token-invalido"))
-//                .isInstanceOf(BusinessException.class)
-//                .hasMessageContaining("Token inválido ou expirado");
-//    }
-//
-//    @Test
-//    @DisplayName("Deve lançar ResourceNotFoundException quando usuário do token não é encontrado")
-//    void deveLancarExcecaoQuandoUsuarioDoTokenNaoExiste() {
-//        when(tokenService.validarToken("token-usuario-deletado")).thenReturn("deletado@email.com");
-//        when(usuarioRepository.findByEmail("deletado@email.com")).thenReturn(Optional.empty());
-//
-//        assertThatThrownBy(() -> authService.renovarToken("token-usuario-deletado"))
-//                .isInstanceOf(ResourceNotFoundException.class)
-//                .hasMessageContaining("Usuário não encontrado");
-//    }
-//}
+package com.centraldocorte.api.services;
+
+import com.centraldocorte.api.domain.models.Usuario;
+import com.centraldocorte.api.domain.models.enums.UsuarioRole;
+import com.centraldocorte.api.domain.repositories.UsuarioRepository;
+import com.centraldocorte.api.dto.LoginRequestDTO;
+import com.centraldocorte.api.dto.LoginResponseDTO;
+import com.centraldocorte.api.dto.RegisterRequestDTO;
+import com.centraldocorte.api.dto.RegisterResponseDTO;
+import com.centraldocorte.api.exception.BusinessException;
+import com.centraldocorte.api.exception.ResourceNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("Testes Unitários - AuthService")
+class AuthServiceTest {
+
+    @Mock private AuthenticationManager authenticationManager;
+    @Mock private UsuarioRepository usuarioRepository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private TokenService tokenService;
+    @Mock private LogSistemaService logSistemaService;
+    @Mock private HttpServletRequest httpRequest;
+    @InjectMocks private AuthService authService;
+
+    private Usuario usuarioAtivo;
+
+    @BeforeEach
+    void setUp() {
+        usuarioAtivo = new Usuario();
+        usuarioAtivo.setId("user-123");
+        usuarioAtivo.setName("Usuário Teste");
+        usuarioAtivo.setEmail("teste@email.com");
+        usuarioAtivo.setPassword("senhaCriptografada");
+        usuarioAtivo.setRole(UsuarioRole.ROLE_CLIENTE);
+        usuarioAtivo.setActive(true);
+    }
+
+    @Test
+    @DisplayName("Deve autenticar usuário com sucesso")
+    void deveAutenticarUsuarioComSucesso() {
+        LoginRequestDTO request = new LoginRequestDTO("teste@email.com", "senha123");
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(usuarioAtivo);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+
+        when(tokenService.gerarAccessToken(usuarioAtivo)).thenReturn("access-token-123");
+        when(tokenService.gerarRefreshToken(usuarioAtivo)).thenReturn("refresh-token-456");
+
+        LoginResponseDTO response = authService.autenticarUsuario(request, httpRequest);
+
+        assertThat(response).isNotNull();
+        assertThat(response.token()).isEqualTo("access-token-123");
+        assertThat(response.refreshToken()).isEqualTo("refresh-token-456");
+        assertThat(response.userId()).isEqualTo("user-123");
+
+        verify(logSistemaService).registrarLog(
+                eq("LOGIN"), eq("LOGIN"), eq("Usuario"), eq("user-123"),
+                anyString(), any(), eq(httpRequest));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção quando credenciais são inválidas")
+    void deveLancarExcecaoQuandoCredenciaisInvalidas() {
+        LoginRequestDTO request = new LoginRequestDTO("teste@email.com", "senhaErrada");
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new BadCredentialsException("Bad credentials"));
+
+        assertThatThrownBy(() -> authService.autenticarUsuario(request, httpRequest))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Email ou senha inválidos");
+    }
+
+    @Test
+    @DisplayName("Deve registrar novo cliente com sucesso")
+    void deveRegistrarNovoClienteComSucesso() {
+        RegisterRequestDTO request = new RegisterRequestDTO(
+                "Novo Cliente", "novo@email.com", "senha123", "11999999999"
+        );
+
+        when(usuarioRepository.existsByEmail("novo@email.com")).thenReturn(false);
+        when(passwordEncoder.encode("senha123")).thenReturn("senhaCriptografada");
+
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+            Usuario usuario = invocation.getArgument(0);
+            usuario.setId("new-user-789");
+            return usuario;
+        });
+
+        RegisterResponseDTO response = authService.registrarUsuario(request, UsuarioRole.ROLE_CLIENTE, httpRequest);
+
+        assertThat(response).isNotNull();
+        assertThat(response.userId()).isEqualTo("new-user-789");
+        assertThat(response.name()).isEqualTo("Novo Cliente");
+        assertThat(response.email()).isEqualTo("novo@email.com");
+        assertThat(response.role()).isEqualTo("ROLE_CLIENTE");
+
+        verify(logSistemaService).registrarLog(
+                eq("USUARIO"), eq("CRIADO"), eq("Usuario"), eq("new-user-789"),
+                anyString(), any(), eq(httpRequest));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao registrar com email já existente")
+    void deveLancarExcecaoQuandoEmailJaExiste() {
+        RegisterRequestDTO request = new RegisterRequestDTO(
+                "Usuário Duplicado", "existente@email.com", "senha123", "11999999999"
+        );
+
+        when(usuarioRepository.existsByEmail("existente@email.com")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.registrarUsuario(request, UsuarioRole.ROLE_CLIENTE, httpRequest))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Email já cadastrado: existente@email.com");
+
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Deve registrar proprietário de barbearia")
+    void deveRegistrarProprietarioBarbearia() {
+        RegisterRequestDTO request = new RegisterRequestDTO(
+                "Dono da Barbearia", "dono@barbearia.com", "senha123", "11988888888"
+        );
+
+        when(usuarioRepository.existsByEmail("dono@barbearia.com")).thenReturn(false);
+        when(passwordEncoder.encode("senha123")).thenReturn("senhaCriptografada");
+
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+            Usuario usuario = invocation.getArgument(0);
+            usuario.setId("owner-123");
+            return usuario;
+        });
+
+        RegisterResponseDTO response = authService.registrarUsuario(request, UsuarioRole.ROLE_BARBEARIA_ADM, httpRequest);
+
+        assertThat(response.role()).isEqualTo("ROLE_BARBEARIA_ADM");
+        assertThat(response.userId()).isEqualTo("owner-123");
+
+        verify(logSistemaService).registrarLog(
+                eq("USUARIO"), eq("CRIADO"), eq("Usuario"), eq("owner-123"),
+                anyString(), any(), eq(httpRequest));
+    }
+
+    @Test
+    @DisplayName("Deve renovar access token com refresh token válido")
+    void deveRenovarAccessTokenComRefreshTokenValido() {
+        String refreshToken = "refresh-token-valido";
+        when(tokenService.validarRefreshToken(refreshToken)).thenReturn("teste@email.com");
+        when(usuarioRepository.findByEmail("teste@email.com")).thenReturn(Optional.of(usuarioAtivo));
+        when(tokenService.gerarAccessToken(usuarioAtivo)).thenReturn("novo-access-token");
+
+        LoginResponseDTO response = authService.renovarToken(refreshToken);
+
+        assertThat(response.token()).isEqualTo("novo-access-token");
+        assertThat(response.refreshToken()).isEqualTo(refreshToken);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção quando refresh token é inválido")
+    void deveLancarExcecaoQuandoRefreshTokenInvalido() {
+        String refreshToken = "refresh-token-invalido";
+        when(tokenService.validarRefreshToken(refreshToken)).thenReturn(null);
+
+        assertThatThrownBy(() -> authService.renovarToken(refreshToken))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Refresh token inválido ou expirado");
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção quando usuário do refresh token está inativo")
+    void deveLancarExcecaoQuandoUsuarioDoRefreshTokenInativo() {
+        String refreshToken = "refresh-token-valido";
+        Usuario usuarioInativo = new Usuario();
+        usuarioInativo.setEmail("inativo@email.com");
+        usuarioInativo.setActive(false);
+
+        when(tokenService.validarRefreshToken(refreshToken)).thenReturn("inativo@email.com");
+        when(usuarioRepository.findByEmail("inativo@email.com")).thenReturn(Optional.of(usuarioInativo));
+
+        assertThatThrownBy(() -> authService.renovarToken(refreshToken))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Usuário inativo");
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção quando usuário do refresh token não existe")
+    void deveLancarExcecaoQuandoUsuarioDoRefreshTokenNaoExiste() {
+        String refreshToken = "refresh-token-valido";
+        when(tokenService.validarRefreshToken(refreshToken)).thenReturn("naoexiste@email.com");
+        when(usuarioRepository.findByEmail("naoexiste@email.com")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.renovarToken(refreshToken))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Usuário não encontrado");
+    }
+}
