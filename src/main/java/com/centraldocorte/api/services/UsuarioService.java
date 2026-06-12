@@ -116,7 +116,7 @@ public class UsuarioService {
         Usuario novoUsuario = montarUsuarioAPartirDoRequest(request);
         usuarioRepository.save(novoUsuario);
 
-        // Registrar log de criação de usuário
+
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("email", novoUsuario.getEmail());
         detalhes.put("role", novoUsuario.getRole().name());

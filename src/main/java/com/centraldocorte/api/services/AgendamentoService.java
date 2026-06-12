@@ -39,7 +39,7 @@ public class AgendamentoService {
     private final FuncionarioBarbeariaRepository funcionarioBarbeariaRepository;
     private final HorarioService horarioService;
     private final DisponibilidadeService disponibilidadeService;
-    private final LogSistemaService logSistemaService;  // ADICIONADO
+    private final LogSistemaService logSistemaService;
 
     private Usuario getUsuarioAutenticado() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();

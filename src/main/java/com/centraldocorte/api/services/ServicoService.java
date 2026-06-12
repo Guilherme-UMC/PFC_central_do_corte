@@ -4,7 +4,7 @@ import com.centraldocorte.api.domain.models.Barbearia;
 import com.centraldocorte.api.domain.models.Servico;
 import com.centraldocorte.api.domain.repositories.BarbeariaRepository;
 import com.centraldocorte.api.domain.repositories.ServicoRepository;
-import com.centraldocorte.api.dto.ServicoDTO;  // ← ADICIONADO
+import com.centraldocorte.api.dto.ServicoDTO;
 import com.centraldocorte.api.dto.ServicoResponseDTO;
 import com.centraldocorte.api.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ public class ServicoService {
     private final BarbeariaRepository barbeariaRepository;
 
     @Transactional
-    public ServicoResponseDTO criarServico(String barbeariaId, ServicoDTO dto) {  // ← CORRIGIDO
+    public ServicoResponseDTO criarServico(String barbeariaId, ServicoDTO dto) {
         Barbearia barbearia = barbeariaRepository.findById(barbeariaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Barbearia não encontrada: " + barbeariaId));
 

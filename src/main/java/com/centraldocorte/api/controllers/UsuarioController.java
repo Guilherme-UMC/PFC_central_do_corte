@@ -102,7 +102,7 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN') or #id == authentication.principal.id")
     @Operation(summary = "Excluir usuário (soft delete)")
     public ResponseEntity<Void> desativarUsuario(
             @PathVariable String id,
@@ -113,7 +113,7 @@ public class UsuarioController {
     }
 
     @PatchMapping("/{id}/toggle-status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN') or #id == authentication.principal.id")
     @Operation(summary = "Ativar/Desativar usuário")
     public ResponseEntity<Void> alternarStatusDoUsuario(
             @PathVariable String id,
