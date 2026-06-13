@@ -52,6 +52,7 @@ public class InicializadorDeDados implements CommandLineRunner {
         admin.setTelefone(adminTelefone);
         admin.setRole(UsuarioRole.ROLE_ADMIN);
         admin.setActive(true);
+        admin.setEmailConfirmado(true);
         return admin;
     }
 }

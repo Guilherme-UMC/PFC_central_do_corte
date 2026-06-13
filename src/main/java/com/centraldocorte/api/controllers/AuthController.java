@@ -5,6 +5,7 @@ import com.centraldocorte.api.dto.LoginRequestDTO;
 import com.centraldocorte.api.dto.LoginResponseDTO;
 import com.centraldocorte.api.dto.RegisterRequestDTO;
 import com.centraldocorte.api.dto.RegisterResponseDTO;
+import com.centraldocorte.api.exception.BusinessException;
 import com.centraldocorte.api.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -18,6 +19,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -88,5 +92,43 @@ public class AuthController {
 
         authService.registrarLogout(httpRequest);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/confirmar-email")
+    @Operation(summary = "Confirmar e-mail", description = "Ativa a conta do usuário após confirmação por e-mail")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "E-mail confirmado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Token inválido ou expirado")
+    })
+    public ResponseEntity<Map<String, String>> confirmarEmail(@RequestParam String token) {
+        Map<String, String> response = new HashMap<>();
+
+        try {
+            authService.confirmarEmail(token);
+            response.put("message", "E-mail confirmado com sucesso! Você já pode fazer login.");
+            response.put("status", "SUCCESS");
+            return ResponseEntity.ok(response);
+        } catch (BusinessException e) {
+            response.put("message", e.getMessage());
+            response.put("status", "ERROR");
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PostMapping("/reenviar-confirmacao")
+    @Operation(summary = "Reenviar e-mail de confirmação")
+    public ResponseEntity<Map<String, String>> reenviarConfirmacao(@RequestParam String email) {
+        Map<String, String> response = new HashMap<>();
+
+        try {
+            authService.reenviarEmailConfirmacao(email);
+            response.put("message", "E-mail de confirmação reenviado! Verifique sua caixa de entrada.");
+            response.put("status", "SUCCESS");
+            return ResponseEntity.ok(response);
+        } catch (BusinessException e) {
+            response.put("message", e.getMessage());
+            response.put("status", "ERROR");
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

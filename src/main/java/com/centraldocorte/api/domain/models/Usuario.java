@@ -44,6 +44,9 @@ public class Usuario implements UserDetails {
     @Column(name = "atualizado_em")
     private LocalDateTime atualizadoEm;
 
+    @Column(name = "email_confirmado", nullable = false)
+    private boolean emailConfirmado = false;
+
     @PrePersist
     protected void onCreate() {
         criadoEm = LocalDateTime.now();
@@ -84,4 +87,7 @@ public class Usuario implements UserDetails {
     public boolean isEnabled() {
         return active;
     }
+
+    public boolean isEmailConfirmado() { return emailConfirmado; }
+    public void setEmailConfirmado(boolean emailConfirmado) { this.emailConfirmado = emailConfirmado; }
 }

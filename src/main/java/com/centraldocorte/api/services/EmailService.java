@@ -46,4 +46,31 @@ public class EmailService {
         mailSender.send(message);
         log.info("Email de recuperação enviado para: {}", destinatario);
     }
+
+    public void enviarEmailConfirmacaoCadastro(String destinatario, String token) {
+        String linkConfirmacao = frontendUrl + "/confirmar-email?token=" + token;
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(destinatario);
+        message.setSubject("Confirme seu cadastro - Central do Corte");
+        message.setText(String.format("""
+            Olá!
+            
+            Bem-vindo ao Central do Corte!
+            
+            Para ativar sua conta e começar a usar nossos serviços, clique no link abaixo:
+            %s
+            
+            Este link é válido por 24 horas.
+            
+            Se você não se cadastrou em nosso sistema, ignore este e-mail.
+            
+            Atenciosamente,
+            Equipe Central do Corte
+            """, linkConfirmacao));
+
+        mailSender.send(message);
+        log.info("E-mail de confirmação de cadastro enviado para: {}", destinatario);
+    }
 }

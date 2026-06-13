@@ -35,6 +35,10 @@ public class RecuperacaoSenhaService {
             throw new BusinessException("Usuário inativo. Entre em contato com o suporte.");
         }
 
+        if (!usuario.isEmailConfirmado()) {
+            throw new BusinessException("E-mail não confirmado. Por favor, confirme seu e-mail antes de redefinir a senha.");
+        }
+
         tokenRepository.deleteByUsuarioId(usuario.getId());
 
         String token = UUID.randomUUID().toString();
