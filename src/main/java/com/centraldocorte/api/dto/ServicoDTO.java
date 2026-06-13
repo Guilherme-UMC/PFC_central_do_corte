@@ -1,5 +1,6 @@
 package com.centraldocorte.api.dto;
 
+import com.centraldocorte.api.domain.models.enums.CategoriaServico;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -21,4 +22,6 @@ public class ServicoDTO {
     @NotNull(message = "Duração é obrigatória")
     @Positive(message = "Duração deve ser maior que zero")
     private Integer duracaoMinutos;
+
+    private CategoriaServico categoria;
 }

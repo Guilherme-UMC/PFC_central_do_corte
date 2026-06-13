@@ -17,7 +17,9 @@ public class AutenticacaoService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository.findByEmail(username)
+        String emailNormalizado = username != null ? username.toLowerCase().trim() : null;
+
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(emailNormalizado)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
 
         if (usuario.getRole() == UsuarioRole.ROLE_ADMIN) {

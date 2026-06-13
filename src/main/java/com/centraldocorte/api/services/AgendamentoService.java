@@ -43,7 +43,7 @@ public class AgendamentoService {
 
     private Usuario getUsuarioAutenticado() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return usuarioRepository.findByEmail(email)
+        return usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new UnauthorizedException("Usuário não encontrado"));
     }
 

@@ -1,5 +1,6 @@
 package com.centraldocorte.api.domain.models;
 
+import com.centraldocorte.api.domain.models.enums.CategoriaServico;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -30,5 +31,9 @@ import java.math.BigDecimal;
         @ManyToOne
         @JoinColumn(name = "barbearia_id", nullable = false)
         private Barbearia barbearia;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private CategoriaServico categoria = CategoriaServico.OUTROS;
     }
 

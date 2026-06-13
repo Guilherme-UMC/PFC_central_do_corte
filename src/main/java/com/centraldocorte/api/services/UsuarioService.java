@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +49,8 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public Usuario buscarPorEmail(String email) {
-        return usuarioRepository.findByEmail(email)
+        String emailNormalizado = email != null ? email.toLowerCase().trim() : null;
+        return usuarioRepository.findByEmailIgnoreCase(emailNormalizado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + email));
     }
 
@@ -92,7 +94,8 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public Usuario buscarUsuarioPorEmailIncluindoInativos(String email) {
-        return usuarioRepository.findByEmail(email)
+        String emailNormalizado = email != null ? email.toLowerCase().trim() : null;
+        return usuarioRepository.findByEmailIgnoreCase(emailNormalizado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + email));
     }
 
@@ -143,9 +146,16 @@ public class UsuarioService {
 
         String emailAntigo = usuario.getEmail();
 
-        if (request.getEmail() != null && !request.getEmail().equals(usuario.getEmail())) {
-            validarEmailDisponivel(request.getEmail());
+        if (request.getEmail() != null) {
+            String novoEmailNormalizado = request.getEmail().toLowerCase().trim();
+            if (!novoEmailNormalizado.equals(usuario.getEmail())) {
+                validarEmailDisponivel(novoEmailNormalizado);
+                usuario.setEmail(novoEmailNormalizado);
+            }
         }
+
+        if (request.getName() != null) usuario.setName(request.getName());
+        if (request.getTelefone() != null) usuario.setTelefone(request.getTelefone());
 
         atualizarCamposDoUsuario(usuario, request);
         usuario = usuarioRepository.save(usuario);
@@ -179,6 +189,12 @@ public class UsuarioService {
                             "Primeiro inative o usuário usando a opção 'Inativar' e depois tente novamente."
             );
         }
+        String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean isSelfOperation = usuario.getEmail().equalsIgnoreCase(emailAutenticado);
+
+        if (isSelfOperation && usuario.getRole() == UsuarioRole.ROLE_ADMIN) {
+            throw new BusinessException("Administradores não podem remover a própria conta. Solicite a outro administrador.");
+        }
 
         if (usuario.getRole() == UsuarioRole.ROLE_ADMIN) {
             long totalAdminsAtivos = usuarioRepository.countByRoleAndActiveTrue(UsuarioRole.ROLE_ADMIN);
@@ -198,6 +214,7 @@ public class UsuarioService {
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("id", id);
         detalhes.put("emailRemovido", emailRemovido);
+        detalhes.put("operadoPor", emailAutenticado);
 
         logSistemaService.registrarLog(
                 "USUARIO",
@@ -219,19 +236,25 @@ public class UsuarioService {
             throw new BusinessException("Este usuário foi removido permanentemente e não pode ser reativado");
         }
 
-        if (usuario.getRole() == UsuarioRole.ROLE_ADMIN) {
-            long totalAdminsAtivos = usuarioRepository.countByRoleAndActiveTrue(UsuarioRole.ROLE_ADMIN);
-            if (totalAdminsAtivos <= 1) {
-                throw new BusinessException("Não é possível inativar o único administrador do sistema");
+        String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean isSelfOperation = usuario.getEmail().equalsIgnoreCase(emailAutenticado);
+
+        if (isSelfOperation && usuario.getRole() == UsuarioRole.ROLE_ADMIN) {
+            throw new BusinessException("Administradores não podem inativar ou remover a própria conta. Solicite a outro administrador.");
+        }
+
+        if (usuario.isActive()) {
+            if (usuario.getRole() == UsuarioRole.ROLE_ADMIN) {
+                long totalAdminsAtivos = usuarioRepository.countByRoleAndActiveTrue(UsuarioRole.ROLE_ADMIN);
+                if (totalAdminsAtivos <= 1) {
+                    throw new BusinessException("Não é possível inativar o único administrador do sistema");
+                }
             }
+            inativacaoService.processarInativacao(usuario);
         }
 
         String statusAntigo = usuario.isActive() ? "ATIVO" : "INATIVO";
         String statusNovo = !usuario.isActive() ? "ATIVO" : "INATIVO";
-
-        if (usuario.isActive()) {
-            inativacaoService.processarInativacao(usuario);
-        }
 
         usuario.setActive(!usuario.isActive());
         usuarioRepository.save(usuario);
@@ -243,15 +266,17 @@ public class UsuarioService {
         detalhes.put("email", usuario.getEmail());
         detalhes.put("statusAntigo", statusAntigo);
         detalhes.put("statusNovo", statusNovo);
+        detalhes.put("operadoPor", emailAutenticado);
+        detalhes.put("isSelfOperation", isSelfOperation);
 
         logSistemaService.registrarLog(
-            "USUARIO",
-            "STATUS_ALTERADO",
-            "Usuario",
-            id,
-            String.format("Status do usuário %s alterado de %s para %s", usuario.getEmail(), statusAntigo, statusNovo),
-            detalhes,
-            httpRequest
+                "USUARIO",
+                "STATUS_ALTERADO",
+                "Usuario",
+                id,
+                String.format("Status do usuário %s alterado de %s para %s", usuario.getEmail(), statusAntigo, statusNovo),
+                detalhes,
+                httpRequest
         );
     }
 
@@ -288,6 +313,13 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
 
+        String emailAutenticado = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean isSelfOperation = usuario.getEmail().equalsIgnoreCase(emailAutenticado);
+
+        if (isSelfOperation && usuario.getRole() == UsuarioRole.ROLE_ADMIN) {
+            throw new BusinessException("Administradores não podem alterar a própria função. Solicite a outro administrador.");
+        }
+
         String roleAntiga = usuario.getRole().name();
         usuario.setRole(novaRole);
         usuario = usuarioRepository.save(usuario);
@@ -297,6 +329,7 @@ public class UsuarioService {
         detalhes.put("email", usuario.getEmail());
         detalhes.put("roleAntiga", roleAntiga);
         detalhes.put("roleNova", novaRole.name());
+        detalhes.put("operadoPor", emailAutenticado);
 
         logSistemaService.registrarLog(
                 "USUARIO",
@@ -316,7 +349,8 @@ public class UsuarioService {
     }
 
     private void validarEmailDisponivel(String email) {
-        if (usuarioRepository.existsByEmail(email)) {
+        String emailNormalizado = email != null ? email.toLowerCase().trim() : null;
+        if (usuarioRepository.existsByEmailIgnoreCase(emailNormalizado)) {
             throw new EmailAlreadyExistsException(email);
         }
     }
@@ -324,18 +358,32 @@ public class UsuarioService {
     private Usuario montarUsuarioAPartirDoRequest(UsuarioRequestDTO request) {
         Usuario usuario = new Usuario();
         usuario.setName(request.getName());
-        usuario.setEmail(request.getEmail());
+        usuario.setEmail(request.getEmail() != null ? request.getEmail().toLowerCase().trim() : null);
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
         usuario.setTelefone(request.getTelefone());
         usuario.setRole(request.getRole() != null ? request.getRole() : UsuarioRole.ROLE_CLIENTE);
-        usuario.setActive(true);
+        usuario.setActive(false);
+        usuario.setEmailConfirmado(false);
+
+        if (request.getRole() == UsuarioRole.ROLE_ADMIN) {
+            usuario.setActive(true);
+            usuario.setEmailConfirmado(true);
+        }
+
         return usuario;
     }
 
     private void atualizarCamposDoUsuario(Usuario usuario, UsuarioUpdateDTO request) {
-        if (request.getName() != null) usuario.setName(request.getName());
-        if (request.getEmail() != null) usuario.setEmail(request.getEmail());
-        if (request.getTelefone() != null) usuario.setTelefone(request.getTelefone());
+        if (request.getName() != null) {
+            usuario.setName(request.getName());
+        }
+        if (request.getEmail() != null) {
+            String emailNormalizado = request.getEmail().toLowerCase().trim();
+            usuario.setEmail(emailNormalizado);
+        }
+        if (request.getTelefone() != null) {
+            usuario.setTelefone(request.getTelefone());
+        }
     }
 
     public UsuarioResponseDTO converterParaResponseDTO(Usuario usuario) {

@@ -69,7 +69,7 @@ class UsuarioRepositoryIT {
     @Test
     @DisplayName("Deve encontrar usuário por email quando existe")
     void deveEncontrarUsuarioPorEmail() {
-        Optional<Usuario> encontrado = usuarioRepository.findByEmail("cliente@teste.com");
+        Optional<Usuario> encontrado = usuarioRepository.findByEmailIgnoreCase("cliente@teste.com");
 
         assertThat(encontrado).isPresent();
         assertThat(encontrado.get().getName()).isEqualTo("Cliente Ativo");
@@ -80,7 +80,7 @@ class UsuarioRepositoryIT {
     @Test
     @DisplayName("Deve retornar empty quando email não existe")
     void deveRetornarEmptyQuandoEmailNaoExiste() {
-        Optional<Usuario> encontrado = usuarioRepository.findByEmail("naoexiste@teste.com");
+        Optional<Usuario> encontrado = usuarioRepository.findByEmailIgnoreCase("naoexiste@teste.com");
 
         assertThat(encontrado).isEmpty();
     }
@@ -88,7 +88,7 @@ class UsuarioRepositoryIT {
     @Test
     @DisplayName("Deve encontrar email mesmo quando usuário está inativo")
     void deveEncontrarEmailQuandoUsuarioInativo() {
-        Optional<Usuario> encontrado = usuarioRepository.findByEmail("inativo@teste.com");
+        Optional<Usuario> encontrado = usuarioRepository.findByEmailIgnoreCase("inativo@teste.com");
 
         assertThat(encontrado).isPresent();
         assertThat(encontrado.get().isActive()).isFalse();
@@ -97,7 +97,7 @@ class UsuarioRepositoryIT {
     @Test
     @DisplayName("existsByEmail deve retornar true quando email existe")
     void existsByEmailDeveRetornarTrueQuandoEmailExiste() {
-        boolean exists = usuarioRepository.existsByEmail("cliente@teste.com");
+        boolean exists = usuarioRepository.existsByEmailIgnoreCase("cliente@teste.com");
 
         assertThat(exists).isTrue();
     }
@@ -105,7 +105,7 @@ class UsuarioRepositoryIT {
     @Test
     @DisplayName("existsByEmail deve retornar false quando email não existe")
     void existsByEmailDeveRetornarFalseQuandoEmailNaoExiste() {
-        boolean exists = usuarioRepository.existsByEmail("naoexiste@teste.com");
+        boolean exists = usuarioRepository.existsByEmailIgnoreCase("naoexiste@teste.com");
 
         assertThat(exists).isFalse();
     }
@@ -266,7 +266,7 @@ class UsuarioRepositoryIT {
     @Test
     @DisplayName("Deve atualizar data de atualização ao modificar usuário")
     void deveAtualizarDataAtualizacaoAoModificar() {
-        Usuario usuario = usuarioRepository.findByEmail("cliente@teste.com").orElseThrow();
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase("cliente@teste.com").orElseThrow();
         usuario.setName("Nome Atualizado");
 
         Usuario atualizado = usuarioRepository.save(usuario);

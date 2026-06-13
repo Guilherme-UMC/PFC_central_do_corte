@@ -99,7 +99,7 @@ class AuthServiceTest {
                 "Novo Cliente", "novo@email.com", "senha123", "11999999999"
         );
 
-        when(usuarioRepository.existsByEmail("novo@email.com")).thenReturn(false);
+        when(usuarioRepository.existsByEmailIgnoreCase("novo@email.com")).thenReturn(false);
         when(passwordEncoder.encode("senha123")).thenReturn("senhaCriptografada");
 
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
@@ -128,7 +128,7 @@ class AuthServiceTest {
                 "Usuário Duplicado", "existente@email.com", "senha123", "11999999999"
         );
 
-        when(usuarioRepository.existsByEmail("existente@email.com")).thenReturn(true);
+        when(usuarioRepository.existsByEmailIgnoreCase("existente@email.com")).thenReturn(true);
 
         assertThatThrownBy(() -> authService.registrarUsuario(request, UsuarioRole.ROLE_CLIENTE, httpRequest))
                 .isInstanceOf(BusinessException.class)
@@ -144,7 +144,7 @@ class AuthServiceTest {
                 "Dono da Barbearia", "dono@barbearia.com", "senha123", "11988888888"
         );
 
-        when(usuarioRepository.existsByEmail("dono@barbearia.com")).thenReturn(false);
+        when(usuarioRepository.existsByEmailIgnoreCase("dono@barbearia.com")).thenReturn(false);
         when(passwordEncoder.encode("senha123")).thenReturn("senhaCriptografada");
 
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
@@ -168,7 +168,7 @@ class AuthServiceTest {
     void deveRenovarAccessTokenComRefreshTokenValido() {
         String refreshToken = "refresh-token-valido";
         when(tokenService.validarRefreshToken(refreshToken)).thenReturn("teste@email.com");
-        when(usuarioRepository.findByEmail("teste@email.com")).thenReturn(Optional.of(usuarioAtivo));
+        when(usuarioRepository.findByEmailIgnoreCase("teste@email.com")).thenReturn(Optional.of(usuarioAtivo));
         when(tokenService.gerarAccessToken(usuarioAtivo)).thenReturn("novo-access-token");
 
         LoginResponseDTO response = authService.renovarToken(refreshToken);
@@ -197,7 +197,7 @@ class AuthServiceTest {
         usuarioInativo.setActive(false);
 
         when(tokenService.validarRefreshToken(refreshToken)).thenReturn("inativo@email.com");
-        when(usuarioRepository.findByEmail("inativo@email.com")).thenReturn(Optional.of(usuarioInativo));
+        when(usuarioRepository.findByEmailIgnoreCase("inativo@email.com")).thenReturn(Optional.of(usuarioInativo));
 
         assertThatThrownBy(() -> authService.renovarToken(refreshToken))
                 .isInstanceOf(BusinessException.class)
@@ -209,7 +209,7 @@ class AuthServiceTest {
     void deveLancarExcecaoQuandoUsuarioDoRefreshTokenNaoExiste() {
         String refreshToken = "refresh-token-valido";
         when(tokenService.validarRefreshToken(refreshToken)).thenReturn("naoexiste@email.com");
-        when(usuarioRepository.findByEmail("naoexiste@email.com")).thenReturn(Optional.empty());
+        when(usuarioRepository.findByEmailIgnoreCase("naoexiste@email.com")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authService.renovarToken(refreshToken))
                 .isInstanceOf(ResourceNotFoundException.class)

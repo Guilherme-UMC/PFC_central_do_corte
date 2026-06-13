@@ -89,7 +89,7 @@ public class FiltroDeAutenticacaoJwt extends OncePerRequestFilter {
         boolean contextoSemAutenticacao = SecurityContextHolder.getContext().getAuthentication() == null;
 
         if (email != null && contextoSemAutenticacao) {
-            usuarioRepository.findByEmail(email).ifPresent(this::registrarAutenticacaoNoContexto);
+            usuarioRepository.findByEmailIgnoreCase(email).ifPresent(this::registrarAutenticacaoNoContexto);
         }
     }
 

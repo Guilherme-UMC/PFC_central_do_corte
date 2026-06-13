@@ -94,7 +94,7 @@ class AgendamentoServiceTest {
     @Test
     @DisplayName("Deve criar agendamento com sucesso quando funcionário específico for escolhido")
     void deveCriarAgendamentoComFuncionarioEspecifico() {
-        when(usuarioRepository.findByEmail("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
+        when(usuarioRepository.findByEmailIgnoreCase("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
         when(barbeariaRepository.findById("barb-001")).thenReturn(Optional.of(barbeariaAtiva));
         when(servicoRepository.findById("serv-001")).thenReturn(Optional.of(servico));
         when(usuarioRepository.findById("func-456")).thenReturn(Optional.of(funcionario));
@@ -133,7 +133,7 @@ class AgendamentoServiceTest {
     @Test
     @DisplayName("Deve lançar exceção quando funcionário não pertence à barbearia")
     void deveLancarExcecaoQuandoFuncionarioNaoPertenceABarbearia() {
-        when(usuarioRepository.findByEmail("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
+        when(usuarioRepository.findByEmailIgnoreCase("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
         when(barbeariaRepository.findById("barb-001")).thenReturn(Optional.of(barbeariaAtiva));
         when(servicoRepository.findById("serv-001")).thenReturn(Optional.of(servico));
         when(usuarioRepository.findById("func-456")).thenReturn(Optional.of(funcionario));
@@ -163,7 +163,7 @@ class AgendamentoServiceTest {
         agendamento.setDataHora(LocalDateTime.now().plusDays(2));
 
         when(agendamentoRepository.findById(1L)).thenReturn(Optional.of(agendamento));
-        when(usuarioRepository.findByEmail("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
+        when(usuarioRepository.findByEmailIgnoreCase("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
         when(agendamentoRepository.save(any(Agendamento.class))).thenAnswer(inv -> inv.getArgument(0));
 
         AgendamentoResponseDTO response = agendamentoService.cancelarAgendamento(1L, "Mudei de ideia", httpRequest);
@@ -185,7 +185,7 @@ class AgendamentoServiceTest {
         agendamento.setDataHora(LocalDateTime.now().plusHours(12));
 
         when(agendamentoRepository.findById(1L)).thenReturn(Optional.of(agendamento));
-        when(usuarioRepository.findByEmail("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
+        when(usuarioRepository.findByEmailIgnoreCase("cliente@teste.com")).thenReturn(Optional.of(clienteAutenticado));
 
         assertThatThrownBy(() -> agendamentoService.cancelarAgendamento(1L, "Motivo", httpRequest))
                 .isInstanceOf(BusinessException.class)

@@ -89,7 +89,7 @@ class RecuperacaoSenhaFlowIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Senha redefinida com sucesso! Faça login com sua nova senha."));
 
-        Usuario usuarioAtualizado = usuarioRepository.findByEmail(emailUsuario).orElseThrow();
+        Usuario usuarioAtualizado = usuarioRepository.findByEmailIgnoreCase(emailUsuario).orElseThrow();
         assertThat(passwordEncoder.matches(novaSenha, usuarioAtualizado.getPassword())).isTrue();
         assertThat(passwordEncoder.matches(senhaOriginal, usuarioAtualizado.getPassword())).isFalse();
     }

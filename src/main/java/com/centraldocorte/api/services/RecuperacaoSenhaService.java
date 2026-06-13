@@ -28,7 +28,9 @@ public class RecuperacaoSenhaService {
 
     @Transactional
     public void solicitarRedefinicaoSenha(String email) {
-        Usuario usuario = usuarioRepository.findByEmail(email)
+        String emailNormalizado = email != null ? email.toLowerCase().trim() : null;
+
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(emailNormalizado)
                 .orElseThrow(() -> new ResourceNotFoundException("Email não encontrado"));
 
         if (!usuario.isActive()) {

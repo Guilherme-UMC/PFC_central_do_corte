@@ -110,7 +110,7 @@ class FiltroDeAutenticacaoJwtTest {
         Usuario usuario = new Usuario();
         usuario.setEmail("usuario@teste.com");
         usuario.setRole(UsuarioRole.ROLE_CLIENTE);
-        when(usuarioRepository.findByEmail("usuario@teste.com")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByEmailIgnoreCase("usuario@teste.com")).thenReturn(Optional.of(usuario));
 
         filtro.doFilterInternal(request, response, filterChain);
 
@@ -156,7 +156,7 @@ class FiltroDeAutenticacaoJwtTest {
         Usuario usuario = new Usuario();
         usuario.setEmail("usuario@teste.com");
         usuario.setRole(UsuarioRole.ROLE_CLIENTE);
-        when(usuarioRepository.findByEmail("usuario@teste.com")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByEmailIgnoreCase("usuario@teste.com")).thenReturn(Optional.of(usuario));
 
         filtro.doFilterInternal(request, response, filterChain);
 
@@ -187,7 +187,7 @@ class FiltroDeAutenticacaoJwtTest {
         when(request.getMethod()).thenReturn("POST");
         when(request.getHeader("Authorization")).thenReturn("Bearer token-valido");
         when(tokenService.validarToken("token-valido")).thenReturn("naoexiste@teste.com");
-        when(usuarioRepository.findByEmail("naoexiste@teste.com")).thenReturn(Optional.empty());
+        when(usuarioRepository.findByEmailIgnoreCase("naoexiste@teste.com")).thenReturn(Optional.empty());
 
         filtro.doFilterInternal(request, response, filterChain);
 
@@ -274,7 +274,7 @@ class FiltroDeAutenticacaoJwtTest {
 
         Usuario usuario = new Usuario();
         usuario.setEmail("usuario@teste.com");
-        when(usuarioRepository.findByEmail("usuario@teste.com")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByEmailIgnoreCase("usuario@teste.com")).thenReturn(Optional.of(usuario));
 
         long startTime = System.nanoTime();
         filtro.doFilterInternal(request, response, filterChain);

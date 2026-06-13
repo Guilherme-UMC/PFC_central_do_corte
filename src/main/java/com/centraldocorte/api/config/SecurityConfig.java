@@ -32,7 +32,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // HABILITA CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
@@ -82,6 +82,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/funcionarios/barbearia/{barbeariaId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/barbearias/{id}/horarios").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/servicos/categorias").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/servicos/buscar-barbearias").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/servicos/barbearia/{barbeariaId}/categorias").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/servicos/barbearia/{barbeariaId}/categoria/{categoria}").permitAll()
 
                         .anyRequest().authenticated()
                 )

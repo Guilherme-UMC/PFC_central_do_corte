@@ -1,5 +1,6 @@
 package com.centraldocorte.api.dto;
 
+import com.centraldocorte.api.domain.models.enums.CategoriaServico;
 import lombok.Data;
 import java.math.BigDecimal;
 
@@ -13,4 +14,5 @@ public class ServicoResponseDTO {
     private Boolean ativo;
     private String barbeariaId;
     private String barbeariaNome;
+    private CategoriaServico categoria;
 }

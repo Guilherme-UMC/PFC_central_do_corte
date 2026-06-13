@@ -44,25 +44,26 @@ public class AuthService {
 
     public LoginResponseDTO autenticarUsuario(LoginRequestDTO request, HttpServletRequest httpRequest) {
         try {
-            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(request.email());
+            String emailNormalizado = request.email() != null ? request.email().toLowerCase().trim() : null;
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByEmailIgnoreCase(emailNormalizado);
 
             if (usuarioOpt.isPresent() && !usuarioOpt.get().isEmailConfirmado()) {
                 Map<String, Object> detalhes = new HashMap<>();
-                detalhes.put("email", request.email());
+                detalhes.put("email", emailNormalizado);
 
                 logSistemaService.registrarLog(
                         "LOGIN",
                         "FALHA_LOGIN_EMAIL_NAO_CONFIRMADO",
                         "Usuario",
                         null,
-                        String.format("Tentativa de login com email não confirmado: %s", request.email()),
+                        String.format("Tentativa de login com email não confirmado: %s", emailNormalizado),
                         detalhes,
                         httpRequest
                 );
                 throw new BusinessException("E-mail não confirmado. Verifique sua caixa de entrada e confirme seu cadastro.");
             }
 
-            var credenciais = new UsernamePasswordAuthenticationToken(request.email(), request.password());
+            var credenciais = new UsernamePasswordAuthenticationToken(emailNormalizado, request.password());
             Authentication autenticacao = authenticationManager.authenticate(credenciais);
 
             Usuario usuario = (Usuario) autenticacao.getPrincipal();
@@ -110,11 +111,12 @@ public class AuthService {
 
     @Transactional
     public RegisterResponseDTO registrarUsuario(RegisterRequestDTO request, UsuarioRole role, HttpServletRequest httpRequest) {
+        String emailNormalizado = request.email() != null ? request.email().toLowerCase().trim() : null;
         validarEmailDisponivel(request.email());
 
-        Usuario novoUsuario = criarUsuarioAPartirDoRequest(request, role);
-        novoUsuario.setActive(false);
-        novoUsuario.setEmailConfirmado(false);
+        validarEmailDisponivel(emailNormalizado);
+
+        Usuario novoUsuario = criarUsuarioAPartirDoRequest(request, role, emailNormalizado);
         usuarioRepository.save(novoUsuario);
 
         String confirmacaoToken = UUID.randomUUID().toString();
@@ -126,7 +128,7 @@ public class AuthService {
                 .build();
         emailConfirmacaoTokenRepository.save(token);
 
-        emailService.enviarEmailConfirmacaoCadastro(novoUsuario.getEmail(), confirmacaoToken);
+        emailService.enviarEmailConfirmacaoCadastro(emailNormalizado, confirmacaoToken);
 
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("email", novoUsuario.getEmail());
@@ -146,7 +148,7 @@ public class AuthService {
         return new RegisterResponseDTO(
                 novoUsuario.getId(),
                 novoUsuario.getName(),
-                novoUsuario.getEmail(),
+                emailNormalizado,
                 novoUsuario.getRole().name(),
                 "Usuário cadastrado! Enviamos um link de confirmação para seu e-mail."
         );
@@ -158,7 +160,7 @@ public class AuthService {
             throw new BusinessException("Refresh token inválido ou expirado");
         }
 
-        Usuario usuario = usuarioRepository.findByEmail(email)
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
         if (!usuario.isActive()) {
             throw new BusinessException("Usuário inativo");
@@ -179,7 +181,7 @@ public class AuthService {
     public void registrarLogout(HttpServletRequest httpRequest) {
         try {
             String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
+            Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email).orElse(null);
 
             if (usuario != null) {
                 Map<String, Object> detalhes = new HashMap<>();
@@ -202,7 +204,8 @@ public class AuthService {
     }
 
     private void validarEmailDisponivel(String email) {
-        if (usuarioRepository.existsByEmail(email)) {
+        String emailNormalizado = email != null ? email.toLowerCase().trim() : null;
+        if (usuarioRepository.existsByEmailIgnoreCase(emailNormalizado)) {
             throw new BusinessException("Email já cadastrado: " + email);
         }
     }
@@ -230,7 +233,9 @@ public class AuthService {
 
     @Transactional
     public void reenviarEmailConfirmacao(String email) {
-        Usuario usuario = usuarioRepository.findByEmail(email)
+        String emailNormalizado = email != null ? email.toLowerCase().trim() : null;
+
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(emailNormalizado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
         if (usuario.isEmailConfirmado()) {
@@ -248,19 +253,21 @@ public class AuthService {
                 .build();
         emailConfirmacaoTokenRepository.save(token);
 
-        emailService.enviarEmailConfirmacaoCadastro(usuario.getEmail(), novoToken);
+        emailService.enviarEmailConfirmacaoCadastro(emailNormalizado, novoToken);
 
-        log.info("E-mail de confirmação reenviado para: {}", email);
+        log.info("E-mail de confirmação reenviado para: {}", emailNormalizado);
     }
 
-    private Usuario criarUsuarioAPartirDoRequest(RegisterRequestDTO request, UsuarioRole role) {
+    private Usuario criarUsuarioAPartirDoRequest(RegisterRequestDTO request, UsuarioRole role, String emailNormalizado) {
         Usuario usuario = new Usuario();
         usuario.setName(request.name());
-        usuario.setEmail(request.email());
+        usuario.setEmail(emailNormalizado);
         usuario.setPassword(passwordEncoder.encode(request.password()));
         usuario.setTelefone(request.telefone());
         usuario.setRole(role);
-        usuario.setActive(true);
+        usuario.setActive(false);
+        usuario.setEmailConfirmado(false);
         return usuario;
     }
+
 }
