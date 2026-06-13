@@ -1,5 +1,6 @@
 package com.centraldocorte.api.controllers;
 
+import com.centraldocorte.api.domain.models.Usuario;
 import com.centraldocorte.api.domain.models.enums.UsuarioRole;
 import com.centraldocorte.api.dto.UsuarioRequestDTO;
 import com.centraldocorte.api.dto.UsuarioResponseDTO;
@@ -13,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -44,7 +47,17 @@ public class UsuarioController {
         Page<UsuarioResponseDTO> page;
 
         if (search != null && !search.trim().isEmpty()) {
-            page = usuarioService.buscarPorNome(search, pageable);
+            // Tenta buscar primeiro por ID exato
+            String searchTerm = search.trim();
+            try {
+                Usuario usuario = usuarioService.buscarUsuarioPorIdIncluindoInativos(searchTerm);
+                // Se encontrou por ID, retorna uma página com um único resultado
+                UsuarioResponseDTO dto = usuarioService.converterParaResponseDTO(usuario);
+                page = new PageImpl<>(List.of(dto), pageable, 1);
+            } catch (Exception e) {
+                // Se não é um ID válido (formato UUID), busca por nome
+                page = usuarioService.buscarPorNome(searchTerm, pageable);
+            }
         } else if (role != null && ativo != null) {
             page = usuarioService.listarPorRoleEStatus(role, ativo, pageable);
         } else if (role != null) {
