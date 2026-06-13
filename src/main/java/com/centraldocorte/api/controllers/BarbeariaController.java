@@ -144,4 +144,13 @@ public class BarbeariaController {
 
         return ResponseEntity.ok(endereco);
     }
+
+    @GetMapping("/admin/todas")
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Listar todas as barbearias (ativas e inativas) - apenas ADMIN")
+    public ResponseEntity<Page<BarbeariaResponseDTO>> listarTodasBarbeariasAdmin(
+            @PageableDefault(size = 10, sort = "nome", direction = Sort.Direction.ASC) Pageable pageable) {
+        return ResponseEntity.ok(barbeariaService.listarTodasBarbeariasAdmin(pageable));
+    }
 }

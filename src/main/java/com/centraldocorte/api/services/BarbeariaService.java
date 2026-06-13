@@ -35,10 +35,15 @@ public class BarbeariaService {
         return converterParaResponseDTO(barbeariaSalva);
     }
 
-
     @Transactional(readOnly = true)
     public Page<BarbeariaResponseDTO> listarBarbeariasAtivas(Pageable pageable) {
         return barbeariaRepository.findAllByAtivoTrue(pageable)
+                .map(this::converterParaResponseDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BarbeariaResponseDTO> listarTodasBarbeariasAdmin(Pageable pageable) {
+        return barbeariaRepository.findAll(pageable)
                 .map(this::converterParaResponseDTO);
     }
 

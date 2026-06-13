@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ public class AgendamentoService {
     private final HorarioService horarioService;
     private final DisponibilidadeService disponibilidadeService;
     private final LogSistemaService logSistemaService;
+    private final EmailService emailService;
 
     private Usuario getUsuarioAutenticado() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -143,6 +145,7 @@ public class AgendamentoService {
         agendamento.setObservacao(request.getObservacao());
 
         Agendamento saved = agendamentoRepository.save(agendamento);
+        emailService.enviarEmailAgendamentoCriado(saved);
 
         log.info("Agendamento criado com sucesso! ID: {}, Funcionário: {}, Cliente: {}",
                 saved.getId(), funcionario.getName(), cliente.getName());
@@ -221,27 +224,45 @@ public class AgendamentoService {
             throw new BusinessException("Não é possível cancelar um agendamento já concluído");
         }
 
+        if (agendamento.getStatus() == StatusAgendamento.CANCELADO_PELO_CLIENTE ||
+                agendamento.getStatus() == StatusAgendamento.CANCELADO_PELA_BARBEARIA) {
+            throw new BusinessException("Este agendamento já foi cancelado");
+        }
+
         LocalDateTime agora = LocalDateTime.now();
-        LocalDateTime limiteCancelamento = agendamento.getDataHora().minusHours(24);
 
         if (agendamento.getDataHora().isBefore(agora)) {
             throw new BusinessException("Não é possível cancelar um agendamento que já passou");
         }
 
-        if (agora.isAfter(limiteCancelamento)) {
-            throw new BusinessException("Cancelamentos devem ser feitos com pelo menos 24 horas de antecedência");
+        if (isCliente) {
+            LocalDateTime limiteCancelamento = agendamento.getDataHora().minusHours(24);
+            if (agora.isAfter(limiteCancelamento)) {
+                throw new BusinessException("Cancelamentos devem ser feitos com pelo menos 24 horas de antecedência");
+            }
         }
 
         String statusAnterior = agendamento.getStatus().name();
+        String canceladoPor;
 
         if (isCliente) {
             agendamento.setStatus(StatusAgendamento.CANCELADO_PELO_CLIENTE);
+            canceladoPor = "cliente";
         } else {
             agendamento.setStatus(StatusAgendamento.CANCELADO_PELA_BARBEARIA);
+            canceladoPor = "dono da barbearia";
         }
 
-        agendamento.setObservacao(String.format("Cancelado por %s. Motivo: %s",
-                isCliente ? "cliente" : "barbearia", motivo));
+        String observacaoCompleta = String.format("Cancelado por %s às %s. Motivo: %s",
+                canceladoPor,
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")),
+                motivo != null ? motivo : "Não informado");
+
+        if (agendamento.getObservacao() != null && !agendamento.getObservacao().isEmpty()) {
+            observacaoCompleta = agendamento.getObservacao() + " | " + observacaoCompleta;
+        }
+
+        agendamento.setObservacao(observacaoCompleta);
 
         Agendamento updated = agendamentoRepository.save(agendamento);
 
@@ -250,17 +271,30 @@ public class AgendamentoService {
         detalhes.put("motivo", motivo);
         detalhes.put("statusAnterior", statusAnterior);
         detalhes.put("statusNovo", agendamento.getStatus().name());
-        detalhes.put("canceladoPor", isCliente ? "cliente" : "barbearia");
+        detalhes.put("canceladoPor", canceladoPor);
+        detalhes.put("usuarioId", usuario.getId());
+        detalhes.put("usuarioEmail", usuario.getEmail());
 
         logSistemaService.registrarLog(
                 "AGENDAMENTO",
                 "CANCELADO",
                 "Agendamento",
                 agendamentoId.toString(),
-                String.format("Agendamento %d foi cancelado por %s. Motivo: %s", agendamentoId, isCliente ? "cliente" : "barbearia", motivo),
+                String.format("Agendamento %d foi cancelado por %s. Motivo: %s",
+                        agendamentoId, canceladoPor, motivo != null ? motivo : "Não informado"),
                 detalhes,
                 httpRequest
         );
+
+        try {
+            if (isCliente) {
+                emailService.enviarEmailCancelamentoPeloCliente(updated, motivo);
+            } else {
+                emailService.enviarEmailCancelamentoPelaBarbearia(updated, motivo);
+            }
+        } catch (Exception e) {
+            log.error("Erro ao enviar e-mail de cancelamento: {}", e.getMessage());
+        }
 
         return convertToResponseDTO(updated);
     }
@@ -281,6 +315,7 @@ public class AgendamentoService {
 
         agendamento.setStatus(StatusAgendamento.CONFIRMADO);
         Agendamento updated = agendamentoRepository.save(agendamento);
+        emailService.enviarEmailAgendamentoConfirmado(updated);
 
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("agendamentoId", agendamentoId);
@@ -321,6 +356,7 @@ public class AgendamentoService {
 
         agendamento.setStatus(StatusAgendamento.CONCLUIDO);
         Agendamento updated = agendamentoRepository.save(agendamento);
+        emailService.enviarEmailAgendamentoConcluido(updated);
 
         Map<String, Object> detalhes = new HashMap<>();
         detalhes.put("agendamentoId", agendamentoId);

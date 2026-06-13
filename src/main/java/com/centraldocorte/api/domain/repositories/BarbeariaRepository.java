@@ -29,4 +29,6 @@ public interface BarbeariaRepository extends JpaRepository<Barbearia, String> {
 
     @Query("SELECT b FROM barbearia b WHERE b.owner.id = :ownerId AND b.ativo = true")
     List<Barbearia> findByOwnerIdAndAtivoTrue(@Param("ownerId") String ownerId);
+
+    Page<Barbearia> findAll(Pageable pageable);
 }
