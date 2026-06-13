@@ -49,7 +49,7 @@ public class EmailService {
             """, linkRecuperacao));
 
         mailSender.send(message);
-        log.info("Email de recuperação enviado para: {}", destinatario);
+        log.info("Email de recuperação enviado");
     }
 
     public void enviarEmailConfirmacaoCadastro(String destinatario, String token) {
@@ -76,7 +76,7 @@ public class EmailService {
             """, linkConfirmacao));
 
         mailSender.send(message);
-        log.info("E-mail de confirmação de cadastro enviado para: {}", destinatario);
+        log.info("E-mail de confirmação de cadastro enviado");
     }
 
     public void enviarEmailAgendamentoCriado(Agendamento agendamento) {
@@ -194,7 +194,6 @@ public class EmailService {
             
             Barbearia: %s
             Cliente: %s
-            Telefone: %s
             Serviço: %s
             Data e Hora: %s
             Profissional: %s
@@ -209,7 +208,6 @@ public class EmailService {
                 null,
                 agendamento.getBarbearia().getNome(),
                 agendamento.getCliente().getName(),
-                agendamento.getCliente().getTelefone() != null ? agendamento.getCliente().getTelefone() : "Não informado",
                 agendamento.getServico().getNome(),
                 dataHoraFormatada,
                 agendamento.getFuncionario() != null ? agendamento.getFuncionario().getName() : "Não atribuído",
@@ -226,7 +224,6 @@ public class EmailService {
                 
                 Barbearia: %s
                 Cliente: %s
-                Telefone: %s
                 Serviço: %s
                 Data e Hora: %s
                 Profissional: %s
@@ -241,7 +238,6 @@ public class EmailService {
                     agendamento.getBarbearia().getOwner().getName(),
                     agendamento.getBarbearia().getNome(),
                     agendamento.getCliente().getName(),
-                    agendamento.getCliente().getTelefone() != null ? agendamento.getCliente().getTelefone() : "Não informado",
                     agendamento.getServico().getNome(),
                     dataHoraFormatada,
                     agendamento.getFuncionario() != null ? agendamento.getFuncionario().getName() : "Não atribuído",
@@ -260,7 +256,6 @@ public class EmailService {
                 
                 Barbearia: %s
                 Cliente: %s
-                Telefone: %s
                 Serviço: %s
                 Data e Hora: %s
                 
@@ -274,7 +269,6 @@ public class EmailService {
                     agendamento.getFuncionario().getName(),
                     agendamento.getBarbearia().getNome(),
                     agendamento.getCliente().getName(),
-                    agendamento.getCliente().getTelefone() != null ? agendamento.getCliente().getTelefone() : "Não informado",
                     agendamento.getServico().getNome(),
                     dataHoraFormatada,
                     motivo != null ? motivo : "Não informado",
@@ -301,8 +295,6 @@ public class EmailService {
             
             Esperamos que tenha gostado da experiência!
             
-            Avalie o atendimento: %s/avaliar/%s
-            
             Atenciosamente,
             Equipe Central do Corte
             """,
@@ -326,7 +318,7 @@ public class EmailService {
             message.setSubject(subject);
             message.setText(body);
             mailSender.send(message);
-            log.info("E-mail enviado para: {} - Assunto: {}", destinatario, subject);
+            log.info("E-mail enviado. Assunto: {}", subject);
         } catch (Exception e) {
             log.error("Erro ao enviar e-mail para {}: {}", destinatario, e.getMessage());
         }
