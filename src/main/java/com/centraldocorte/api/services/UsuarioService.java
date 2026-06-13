@@ -19,10 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -46,6 +43,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + id));
         return converterParaResponseDTO(usuario);
     }
+
 
     @Transactional(readOnly = true)
     public Usuario buscarPorEmail(String email) {
@@ -85,6 +83,8 @@ public class UsuarioService {
                 .map(this::converterParaResponseDTO)
                 .toList();
     }
+
+
 
     @Transactional(readOnly = true)
     public Usuario buscarUsuarioPorIdIncluindoInativos(String id) {
