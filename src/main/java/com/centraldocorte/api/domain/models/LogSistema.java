@@ -27,16 +27,13 @@ public class LogSistema {
     private Long id;
 
     @Column(nullable = false)
-    private String tipo; // AGENDAMENTO, USUARIO, BARBEARIA, SERVICO, FUNCIONARIO, LOGIN, LOGOUT
+    private String tipo;
 
     @Column(nullable = false)
-    private String acao; // CRIADO, ATUALIZADO, CANCELADO, CONFIRMADO, CONCLUIDO, DELETADO, LOGIN, LOGOUT
+    private String acao;
 
     @Column(name = "usuario_id", nullable = false)
     private String usuarioId;
-
-    @Column(name = "usuario_email")
-    private String usuarioEmail;
 
     @Column(name = "usuario_nome")
     private String usuarioNome;

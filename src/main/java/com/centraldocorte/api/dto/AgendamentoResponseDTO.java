@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AgendamentoResponseDTO {
-    private Long id;
+    private String id;
     private String barbeariaNome;
     private String clienteNome;
     private String servicoNome;

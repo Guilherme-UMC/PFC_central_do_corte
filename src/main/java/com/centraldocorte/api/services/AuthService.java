@@ -52,11 +52,11 @@ public class AuthService {
                 detalhes.put("email", emailNormalizado);
 
                 logSistemaService.registrarLog(
-                        "LOGIN",
-                        "FALHA_LOGIN_EMAIL_NAO_CONFIRMADO",
+                        "ACESSO",
+                        "FALHA_DE_ACESSO_EMAIL_NAO_CONFIRMADO",
                         "Usuario",
                         null,
-                        String.format("Tentativa de login com email não confirmado: %s", emailNormalizado),
+                        String.format("Tentativa de acesso com email não confirmado: %s"),
                         detalhes,
                         httpRequest
                 );
@@ -75,11 +75,11 @@ public class AuthService {
             detalhes.put("role", usuario.getRole().name());
 
             logSistemaService.registrarLog(
-                    "LOGIN",
-                    "LOGIN",
+                    "ACESSO",
+                    "ACESSO",
                     "Usuario",
                     usuario.getId(),
-                    String.format("Usuário %s (%s) fez login com sucesso", usuario.getEmail(), usuario.getRole().name()),
+                    String.format("Usuário %s (%s) fez acesso com sucesso", usuario.getName(), usuario.getRole().name()),
                     detalhes,
                     httpRequest
             );
@@ -90,18 +90,18 @@ public class AuthService {
                     usuario.getId(),
                     usuario.getName(),
                     usuario.getRole().name(),
-                    "Login realizado com sucesso"
+                    "Acesso realizado com sucesso"
             );
         } catch (BadCredentialsException e) {
             Map<String, Object> detalhes = new HashMap<>();
             detalhes.put("email", request.email());
 
             logSistemaService.registrarLog(
-                    "LOGIN",
-                    "FALHA_LOGIN",
+                    "ACESSO",
+                    "FALHA_DE_ACESSO",
                     "Usuario",
                     null,
-                    String.format("Tentativa de login falha para email: %s", request.email()),
+                    String.format("Tentativa de acesso falha"),
                     detalhes,
                     httpRequest
             );
@@ -140,7 +140,7 @@ public class AuthService {
                 "CRIADO_AGUARDANDO_CONFIRMACAO",
                 "Usuario",
                 novoUsuario.getId(),
-                String.format("Novo usuário criado aguardando confirmação: %s", novoUsuario.getEmail(), novoUsuario.getRole().name()),
+                String.format("Novo usuário criado aguardando confirmação: %s", novoUsuario.getName(), novoUsuario.getRole().name()),
                 detalhes,
                 httpRequest
         );
@@ -193,7 +193,7 @@ public class AuthService {
                         "LOGOUT",
                         "Usuario",
                         usuario.getId(),
-                        String.format("Usuário %s fez logout", usuario.getEmail()),
+                        String.format("Usuário %s fez logout", usuario.getName()),
                         detalhes,
                         httpRequest
                 );

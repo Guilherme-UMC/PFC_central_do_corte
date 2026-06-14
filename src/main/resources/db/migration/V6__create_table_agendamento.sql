@@ -1,5 +1,5 @@
 CREATE TABLE agendamento (
- id BIGSERIAL PRIMARY KEY,
+ id VARCHAR(36) PRIMARY KEY,
  barbearia_id VARCHAR(36) NOT NULL,
  cliente_id VARCHAR(36) NOT NULL,
  servico_id VARCHAR(36) NOT NULL,

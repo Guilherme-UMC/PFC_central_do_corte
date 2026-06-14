@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 public class Agendamento {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "barbearia_id", nullable = false)
@@ -46,7 +46,7 @@ public class Agendamento {
     // Construtores
     public Agendamento() {}
 
-    public Agendamento(Long id, Barbearia barbearia, Usuario cliente, Servico servico,
+    public Agendamento(String id, Barbearia barbearia, Usuario cliente, Servico servico,
                        Usuario funcionario, LocalDateTime dataHora, StatusAgendamento status,
                        String observacao, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
         this.id = id;
@@ -73,11 +73,11 @@ public class Agendamento {
     }
 
     // Getters e Setters
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
