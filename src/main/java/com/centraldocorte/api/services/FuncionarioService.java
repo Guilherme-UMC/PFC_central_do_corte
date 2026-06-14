@@ -55,7 +55,7 @@ public class FuncionarioService {
                 "CRIADO",
                 "Funcionario",
                 funcionario.getId(),
-                String.format("Funcionário %s foi criado e vinculado à barbearia %s", funcionario.getEmail(), barbearia.getNome()),
+                String.format("Funcionário %s foi criado e vinculado à barbearia %s", funcionario.getName(), barbearia.getNome()),
                 detalhes,
                 httpRequest
         );
@@ -100,7 +100,7 @@ public class FuncionarioService {
                 "VINCULADO",
                 "Funcionario",
                 funcionario.getId(),
-                String.format("Funcionário %s foi vinculado à barbearia %s", funcionario.getEmail(), barbearia.getNome()),
+                String.format("Funcionário %s foi vinculado à barbearia %s", funcionario.getName(), barbearia.getNome()),
                 detalhes,
                 httpRequest
         );
@@ -183,7 +183,7 @@ public class FuncionarioService {
                 "DESVINCULADO",
                 "Funcionario",
                 funcionarioId,
-                String.format("Funcionário %s foi desvinculado da barbearia", funcionario != null ? funcionario.getEmail() : funcionarioId),
+                String.format("Funcionário %s foi desvinculado da barbearia", funcionario != null ? funcionario.getName() : funcionarioId),
                 detalhes,
                 httpRequest
         );

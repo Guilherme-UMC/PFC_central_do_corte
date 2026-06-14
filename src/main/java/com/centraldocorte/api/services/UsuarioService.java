@@ -130,7 +130,7 @@ public class UsuarioService {
                 "CRIADO",
                 "Usuario",
                 novoUsuario.getId(),
-                String.format("Usuário %s foi criado com role %s", novoUsuario.getEmail(), novoUsuario.getRole().name()),
+                String.format("Usuário %s foi criado com role %s", novoUsuario.getName(), novoUsuario.getRole().name()),
                 detalhes,
                 httpRequest
         );
@@ -170,7 +170,7 @@ public class UsuarioService {
                 "ATUALIZADO",
                 "Usuario",
                 id,
-                String.format("Usuário %s foi atualizado", usuario.getEmail()),
+                String.format("Usuário %s foi atualizado", usuario.getName()),
                 detalhes,
                 httpRequest
         );
@@ -221,7 +221,7 @@ public class UsuarioService {
                 "DELETADO",
                 "Usuario",
                 id,
-                String.format("Usuário %s foi removido permanentemente", emailRemovido),
+                String.format("Usuário %s foi removido permanentemente"),
                 detalhes,
                 httpRequest
         );
@@ -274,7 +274,7 @@ public class UsuarioService {
                 "STATUS_ALTERADO",
                 "Usuario",
                 id,
-                String.format("Status do usuário %s alterado de %s para %s", usuario.getEmail(), statusAntigo, statusNovo),
+                String.format("Status do usuário %s alterado de %s para %s", usuario.getName(), statusAntigo, statusNovo),
                 detalhes,
                 httpRequest
         );
@@ -302,7 +302,7 @@ public class UsuarioService {
             "SENHA_ALTERADA",
             "Usuario",
             id,
-            String.format("Senha do usuário %s foi alterada", usuario.getEmail()),
+            String.format("Senha do usuário %s foi alterada", usuario.getName()),
             detalhes,
             httpRequest
         );
@@ -336,7 +336,7 @@ public class UsuarioService {
                 "ROLE_ALTERADA",
                 "Usuario",
                 id,
-                String.format("Role do usuário %s alterada de %s para %s", usuario.getEmail(), roleAntiga, novaRole.name()),
+                String.format("Role do usuário %s alterada de %s para %s", usuario.getName(), roleAntiga, novaRole.name()),
                 detalhes,
                 httpRequest
         );

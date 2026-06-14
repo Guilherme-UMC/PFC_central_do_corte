@@ -67,7 +67,7 @@ public class LogSistemaService {
                 .tipo(tipo)
                 .acao(acao)
                 .usuarioId(usuarioId)
-                .usuarioEmail(email)
+
                 .usuarioNome(usuarioNome)
                 .usuarioRole(usuarioRole)
                 .entidade(entidade)
@@ -188,7 +188,7 @@ public class LogSistemaService {
             .tipo(logSistema.getTipo())
             .acao(logSistema.getAcao())
             .usuarioId(logSistema.getUsuarioId())
-            .usuarioEmail(logSistema.getUsuarioEmail())
+
             .usuarioNome(logSistema.getUsuarioNome())
             .usuarioRole(logSistema.getUsuarioRole())
             .entidade(logSistema.getEntidade())
